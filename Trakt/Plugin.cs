@@ -1,16 +1,15 @@
 ﻿using System;
 using System.ComponentModel.Composition;
-
 using MediaBrowser.Common.Plugins;
-using MediaBrowser.Model.Plugins;
 using Trakt.Configuration;
 
 namespace Trakt
 {
     [Export(typeof(IPlugin))]
-    public class Plugin : BasePlugin<PluginConfiguration>
+    public class Plugin : BaseUiPlugin<PluginConfiguration>
     {
         private ServerMediator _mediator;
+        private ClientMediator _clientMediator;
 
         protected override void InitializeOnServer(bool isFirstRun)
         {
@@ -24,6 +23,22 @@ namespace Trakt
         {
             base.DisposeOnServer(dispose);
             _mediator.Dispose();
+        }
+
+
+
+        protected override void InitializeInUi()
+        {
+            base.InitializeInUi();
+            _clientMediator = new ClientMediator();
+        }
+
+
+
+        protected override void DisposeInUI(bool dispose)
+        {
+            base.DisposeInUI(dispose);
+            _clientMediator.Dispose();
         }
 
 
@@ -57,6 +72,13 @@ namespace Trakt
         public PluginConfiguration PluginConfiguration
         {
             get { return Configuration; }
+        }
+
+
+
+        public override Version MinimumRequiredUIVersion
+        {
+            get { return new Version(0, 0, 0, 1); }
         }
     }
 }

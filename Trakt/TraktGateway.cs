@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using MediaBrowser.Controller.Entities;
+﻿using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Threading.Tasks;
@@ -10,7 +8,7 @@ using Trakt.Model;
 namespace Trakt
 {
     /// <summary>
-    /// This class will contain the various methods that the app will call in order to communicate with the trakt.tv site
+    /// This class will contain the various methods that MB3 server will call in order to communicate with the trakt.tv site
     /// </summary>
     public static class TraktGateway
     {

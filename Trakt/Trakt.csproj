@@ -64,6 +64,7 @@
     <Compile Include="Api\DataContracts\TraktResponseDataContract.cs" />
     <Compile Include="Api\TraktApi.cs" />
     <Compile Include="Api\TraktURIs.cs" />
+    <Compile Include="ClientMediator.cs" />
     <Compile Include="Configuration\PluginConfiguration.cs" />
     <Compile Include="Configuration\TraktConfigurationPage.cs" />
     <Compile Include="Enums.cs" />
@@ -74,6 +75,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScheduledTasks\SyncLibraryTask.cs" />
     <Compile Include="ServerMediator.cs" />
+    <Compile Include="TraktClientGateway.cs" />
     <Compile Include="TraktGateway.cs" />
   </ItemGroup>
   <ItemGroup>
