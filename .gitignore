@@ -98,6 +98,9 @@ ipch/
 _ReSharper*/
 *.[Rr]e[Ss]harper
 
+# Temp image folder
+WipImages/
+
 # TeamCity is a build add-in
 _TeamCity*
 
