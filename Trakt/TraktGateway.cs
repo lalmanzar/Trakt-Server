@@ -1,9 +1,7 @@
 ﻿using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
-
 using System.Threading.Tasks;
-
 using Trakt.Api;
 using Trakt.Model;
 
@@ -36,7 +34,7 @@ namespace Trakt
 
 
         /// <summary>
-        /// Called when a video has been played past the MaxResumePercentage. Let's trakt.tv know to mark
+        /// Called when a video has been played past the MaxResumePercentage. Lets trakt.tv know to mark
         /// an item as watched.
         /// </summary>
         /// <param name="video"> The video that has just finished</param>

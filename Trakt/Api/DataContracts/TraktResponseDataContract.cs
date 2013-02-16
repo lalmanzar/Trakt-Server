@@ -3,7 +3,7 @@
 namespace Trakt.Api.DataContracts
 {
     [DataContract]
-    public class TraktResponseDto
+    public class TraktResponseDataContract
     {
         [DataMember(Name = "status")]
         public string Status { get; set; }
