@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
-using Trakt.Api.DTO;
+using Trakt.Api.DataContracts;
 using Trakt.Model;
 
 namespace Trakt.Api

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Trakt.Api.DTO
+namespace Trakt.Api.DataContracts
 {
     [DataContract]
     public class TraktResponseDto

@@ -61,7 +61,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Api\DTO\TraktResponseDTO.cs" />
+    <Compile Include="Api\DataContracts\TraktResponseDataContract.cs" />
     <Compile Include="Api\TraktApi.cs" />
     <Compile Include="Api\TraktURIs.cs" />
     <Compile Include="Configuration\PluginConfiguration.cs" />
