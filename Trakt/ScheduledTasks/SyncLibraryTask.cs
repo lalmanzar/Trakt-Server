@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Tasks;
@@ -24,9 +22,7 @@ namespace Trakt.ScheduledTasks
     {
         protected override IEnumerable<BaseTaskTrigger> GetDefaultTriggers()
         {
-            var trigger = new WeeklyTrigger {DayOfWeek = DayOfWeek.Sunday, TimeOfDay = TimeSpan.FromHours(3) }; // Sunday - 3am
-
-            return new[] { trigger };
+            return new List<BaseTaskTrigger>() ;
         }
 
         protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<TaskProgress> progress)
@@ -92,7 +88,7 @@ namespace Trakt.ScheduledTasks
 
         public override string Name
         {
-            get { return "Sync Library to trakt.tv"; }
+            get { return "Sync library to trakt.tv"; }
         }
 
         public override string Category
@@ -108,7 +104,7 @@ namespace Trakt.ScheduledTasks
             get
             {
                 return
-                    "Adds any media that is in a trakt monitored location to the current logged in users trakt.tv profile";
+                    "Adds any media that is in each users trakt monitored locations to their trakt.tv profile";
             }
         }
     }
