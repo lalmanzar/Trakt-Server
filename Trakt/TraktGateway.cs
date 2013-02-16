@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Controller.Entities;
+﻿using System.Collections.Generic;
+using System.Linq;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Threading.Tasks;
@@ -50,6 +52,71 @@ namespace Trakt
             {
                 await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser).ConfigureAwait(false);
             }
+        }
+
+
+
+        /// <summary>
+        /// Adds all the media titles that are in trakt locations to the users trakt.tv library
+        /// </summary>
+        /// <param name="user">The user who's library is being updated</param>
+        /// <returns></returns>
+        public static async Task SyncMediaToTraktTv(User user)
+        {
+            var libaryRoot = user.RootFolder;
+            var traktUser = UserHelper.GetTraktUser(user);
+
+            if (traktUser == null || libaryRoot == null || traktUser.TraktLocations == null) return;
+
+            var movies = new List<Movie>();
+            var episodes = new List<Episode>();
+            var currentShow = "";
+
+            foreach (var child in libaryRoot.RecursiveChildren)
+            {
+                if (child.Path == null) continue;
+
+                foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
+                {
+                    if (child is Movie)
+                    {
+                        movies.Add(child as Movie);
+
+                        // publish if the list hits a certain size
+                        if (movies.Count == 200)
+                        {
+                            await TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                            movies.Clear();
+                        }
+                    } 
+                    else if (child is Episode)
+                    {
+                        var ep = child as Episode;
+
+                        if (string.IsNullOrEmpty(currentShow)) currentShow = ep.Series.Name;
+
+                        if (currentShow.Equals(ep.Series.Name))
+                        {
+                            episodes.Add(ep);
+                        }
+                        else
+                        {
+                            // We're starting a new show. Finish up with the old one
+                            await TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                            episodes.Clear();
+
+                            episodes.Add(ep);
+                        }
+                    }
+                }
+            }
+
+            // send any remaining entries
+            if (movies.Count > 0)
+                await TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+
+            if (episodes.Count > 0)
+                await TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
         }
     }
 }
