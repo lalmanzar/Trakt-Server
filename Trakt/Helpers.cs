@@ -3,7 +3,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using MediaBrowser.Controller.Entities;
-
+using MediaBrowser.Model.Logging;
 using Trakt.Model;
 
 namespace Trakt
@@ -19,7 +19,7 @@ namespace Trakt
 
     internal static class CryptographyHelper
     {
-        internal static string GetPasswordHash(string password, TraktUser currentUser)
+        internal static string GetPasswordHash(string password, TraktUser currentUser, ILogger logger)
         {
             if (password != currentUser.PasswordHash)
             {
@@ -37,7 +37,7 @@ namespace Trakt
                 }
                 catch (Exception e)
                 {
-                    MediaBrowser.Common.Logging.Logger.LogException("Error hashing password", e, null);
+                    logger.ErrorException("Error hashing password", e, null);
                     return null;
                 }
             }
