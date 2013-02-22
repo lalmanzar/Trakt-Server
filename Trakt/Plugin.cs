@@ -11,6 +11,7 @@ namespace Trakt
         private ServerMediator _mediator;
         private ClientMediator _clientMediator;
 
+
         protected override void InitializeOnServer(bool isFirstRun)
         {
             base.InitializeOnServer(isFirstRun);

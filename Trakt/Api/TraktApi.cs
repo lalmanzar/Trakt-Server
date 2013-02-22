@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Common.Serialization;
+﻿using System;
+using MediaBrowser.Common.Logging;
+using MediaBrowser.Common.Serialization;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -7,6 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Trakt.Api.DataContracts;
 using Trakt.Model;
+using System.Threading;
 
 namespace Trakt.Api
 {
@@ -15,7 +18,6 @@ namespace Trakt.Api
     /// </summary>
     public static class TraktApi
     {
-
         /// <summary>
         /// Report to trakt.tv that a movie is being watched, or has been watched.
         /// </summary>
@@ -97,21 +99,28 @@ namespace Trakt.Api
         /// <param name="movies">The movies to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <returns></returns>
-        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser)
-        {
-            return SendLibraryUpdate(movies, traktUser);
-        }
-
-        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IEnumerable<Movie> movies, TraktUser traktUser)
+        public static async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IEnumerable<Movie> movies, TraktUser traktUser)
         {
             var moviesPayload = new List<object>();
 
             foreach (Movie m in movies)
             {
+                var id = "";
+
+                try
+                {
+                    id = m.ProviderIds["Imdb"];
+                }
+                catch (Exception)
+                {
+
+                    Logger.LogInfo("Imdb Id not found for '" + m.Name + "'", null);
+                }
+
                 var movieData = new
                 {
                     title = m.Name,
-                    imdb_id = m.ProviderIds["Imdb"],
+                    imdb_id = id,
                     year = m.ProductionYear ?? 0
                 };
 
@@ -124,12 +133,20 @@ namespace Trakt.Api
             data.Add("password", traktUser.PasswordHash);
             data.Add("movies", JsonSerializer.SerializeToString(moviesPayload));
 
-            Stream response =
+            try
+            {
+                Stream response =
                 await
                 Kernel.Instance.HttpManager.Post(TraktUris.MovieLibrary, data, Kernel.Instance.ResourcePools.Trakt,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+                return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            }
+            catch (Exception e)
+            {
+                return new TraktResponseDataContract {Error = e.Message};
+            }
+            
         }
 
 
@@ -140,12 +157,7 @@ namespace Trakt.Api
         /// <param name="episodes">The episodes to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <returns></returns>
-        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync (IReadOnlyList<Episode> episodes, TraktUser traktUser)
-        {
-            return SendLibraryUpdate(episodes, traktUser);
-        }
-
-        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IReadOnlyList<Episode> episodes, TraktUser traktUser)
+        public static async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser)
         {
             var episodesPayload = new List<object>();
 
@@ -164,18 +176,41 @@ namespace Trakt.Api
             
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", episodes[0].Series.ProviderIds["Imdb"]);
-            data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
+            try
+            {
+                data.Add("imdb_id", episodes[0].Series.ProviderIds["Imdb"]);
+            }
+            catch(Exception)
+            {
+                Logger.LogInfo("Imdb Id not found for '" + episodes[0].Series.Name + "'", null);
+            }
+            try
+            {
+                data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
+            }
+            catch (Exception)
+            {
+
+                Logger.LogInfo("Tvdb Id not found for '" + episodes[0].Series.Name + "'", null);
+            }
             data.Add("title", episodes[0].Series.Name);
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());    
             data.Add("episodes", JsonSerializer.SerializeToString(episodesPayload));
 
-            Stream response =
+            try
+            {
+                Stream response =
                 await
                 Kernel.Instance.HttpManager.Post(TraktUris.ShowEpisodeLibrary, data, Kernel.Instance.ResourcePools.Trakt,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+                return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            }
+            catch (Exception e)
+            {
+                return new TraktResponseDataContract {Error = e.Message};
+            }
+            
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Tasks;
@@ -27,19 +28,32 @@ namespace Trakt.ScheduledTasks
 
         protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<TaskProgress> progress)
         {
+            progress.Report(new TaskProgress { PercentComplete = 0 });
+            
+            var processedItemCount = 0;
+            var currentPercent = 0;
+            var maxPercentPerUser = 100/Kernel.Users.Count();
+            
             foreach (var user in Kernel.Users)
             {
-                var libaryRoot = user.RootFolder;
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                if (traktUser == null || libaryRoot == null || traktUser.TraktLocations == null) continue;
+                if (traktUser == null || libraryRoot == null || traktUser.TraktLocations == null) continue;
+
+                // Used for progress reporting
+                var itemsPerPercent = libraryRoot.RecursiveChildren.Count()/maxPercentPerUser;
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
                 var currentShow = "";
 
-                foreach (var child in libaryRoot.RecursiveChildren)
+                foreach (var child in libraryRoot.RecursiveChildren.OfType<Video>())
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (child.Path == null) continue;
 
                     foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
@@ -51,7 +65,8 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                await TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                                TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                                
                                 movies.Clear();
                             }
                         }
@@ -68,22 +83,40 @@ namespace Trakt.ScheduledTasks
                             else
                             {
                                 // We're starting a new show. Finish up with the old one
-                                await TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                                TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                                
                                 episodes.Clear();
 
                                 episodes.Add(ep);
                             }
                         }
                     }
+
+                    processedItemCount += 1;
+
+                    if (processedItemCount == itemsPerPercent)
+                    {
+                        currentPercent += 1;
+                        processedItemCount = 0;
+                        progress.Report(new TaskProgress { PercentComplete = currentPercent <= 100 ? currentPercent : 100 });
+                    }
+
                 }
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                    await TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                {
+                    TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                }
 
                 if (episodes.Count > 0)
-                    await TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                {
+                    TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                }
             }
+
+            
+            progress.Report(new TaskProgress { PercentComplete = 100 });
         }
 
         public override string Name
