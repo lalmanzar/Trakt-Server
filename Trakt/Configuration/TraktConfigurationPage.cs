@@ -1,35 +1,75 @@
-﻿using MediaBrowser.Common.Plugins;
+﻿using MediaBrowser.Controller.Plugins;
+using System;
 using System.ComponentModel.Composition;
 using System.IO;
-using MediaBrowser.Controller.Plugins;
 
 namespace Trakt.Configuration
 {
-    [Export(typeof(BaseConfigurationPage))]
-    class TraktConfigurationPage : BaseConfigurationPage
+    /// <summary>
+    /// Class TraktConfigurationPage
+    /// </summary>
+    [Export(typeof(IPluginConfigurationPage))]
+    class TraktConfigurationPage : IPluginConfigurationPage
     {
-        public override string Name
+        /// <summary>
+        /// Gets the name.
+        /// </summary>
+        /// <value>The name.</value>
+        public string Name
         {
             get { return "Trakt for MediaBrowser"; }
         }
 
-
-
-        public override Stream GetHtmlStream()
+        /// <summary>
+        /// Gets the HTML stream.
+        /// </summary>
+        /// <returns>Stream.</returns>
+        public Stream GetHtmlStream()
         {
-            return GetHtmlStreamFromManifestResource("Trakt.Configuration.configPage.html");
+            return GetType().Assembly.GetManifestResourceStream("Trakt.Configuration.configPage.html");
         }
 
-
-
-        public override IPlugin GetOwnerPlugin()
+        /// <summary>
+        /// Gets the date last modified.
+        /// </summary>
+        /// <value>The date last modified.</value>
+        public DateTime DateLastModified
         {
-            return Plugin.Instance;
+            get { return Plugin.Instance.AssemblyDateLastModified; }
         }
 
+        /// <summary>
+        /// Gets the description.
+        /// </summary>
+        /// <value>The description.</value>
+        public string Description
+        {
+            get { return string.Empty; }
+        }
 
+        /// <summary>
+        /// Gets the plugin id.
+        /// </summary>
+        /// <value>The plugin id.</value>
+        public Guid? PluginId
+        {
+            get { return Plugin.Instance.Id; }
+        }
 
-        public override ConfigurationPageType ConfigurationPageType
+        /// <summary>
+        /// Gets the version.
+        /// </summary>
+        /// <value>The version.</value>
+        public string Version
+        {
+            get { return Plugin.Instance.Version.ToString(); }
+        }
+
+        /// <summary>
+        /// Gets the type of the configuration page.
+        /// </summary>
+        /// <value>The type of the configuration page.</value>
+        public ConfigurationPageType ConfigurationPageType
         {
             get { return ConfigurationPageType.PluginConfiguration; }
         }

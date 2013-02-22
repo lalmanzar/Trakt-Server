@@ -33,17 +33,17 @@
     <RunPostBuildEvent>Always</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MediaBrowser.Common, Version=0.13.4758.35596, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MediaBrowser.Common, Version=2.9.4801.932, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Common.dll</HintPath>
+      <HintPath>..\packages\MediaBrowser.Common.1.0.1\lib\net45\MediaBrowser.Common.dll</HintPath>
     </Reference>
-    <Reference Include="MediaBrowser.Controller, Version=0.13.4758.35597, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MediaBrowser.Controller, Version=2.9.4801.1645, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Controller.dll</HintPath>
+      <HintPath>..\packages\MediaBrowser.Server.Core.1.0.0\lib\net45\MediaBrowser.Controller.dll</HintPath>
     </Reference>
-    <Reference Include="MediaBrowser.Model, Version=0.13.4758.35595, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MediaBrowser.Model, Version=2.9.4801.931, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Model.dll</HintPath>
+      <HintPath>..\packages\MediaBrowser.Common.1.0.1\lib\net45\MediaBrowser.Model.dll</HintPath>
     </Reference>
     <Reference Include="MediaBrowser.UI">
       <HintPath>..\..\MediaBrowser\MediaBrowser.UI\bin\x86\Release\MediaBrowser.UI.exe</HintPath>
@@ -80,6 +80,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

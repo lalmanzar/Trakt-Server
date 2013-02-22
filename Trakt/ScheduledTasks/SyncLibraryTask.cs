@@ -25,7 +25,7 @@ namespace Trakt.ScheduledTasks
             return new List<BaseTaskTrigger>() ;
         }
 
-        protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<TaskProgress> progress)
+        protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<double> progress)
         {
             foreach (var user in Kernel.Users)
             {
