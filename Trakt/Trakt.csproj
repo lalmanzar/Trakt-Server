@@ -35,18 +35,18 @@
   <ItemGroup>
     <Reference Include="MediaBrowser.Common, Version=0.13.4758.35596, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowserServer\MediaBrowser.ServerApplication\bin\Release\MediaBrowser.Common.dll</HintPath>
+      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Common.dll</HintPath>
     </Reference>
     <Reference Include="MediaBrowser.Controller, Version=0.13.4758.35597, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowserServer\MediaBrowser.ServerApplication\bin\Release\MediaBrowser.Controller.dll</HintPath>
+      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Controller.dll</HintPath>
     </Reference>
     <Reference Include="MediaBrowser.Model, Version=0.13.4758.35595, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\MediaBrowserServer\MediaBrowser.ServerApplication\bin\Release\MediaBrowser.Model.dll</HintPath>
+      <HintPath>..\..\MediaBrowser\MediaBrowser.ServerApplication\bin\x86\Release\MediaBrowser.Model.dll</HintPath>
     </Reference>
     <Reference Include="MediaBrowser.UI">
-      <HintPath>..\..\MediaBrowserServer\MediaBrowser.UI\bin\Release\MediaBrowser.UI.exe</HintPath>
+      <HintPath>..\..\MediaBrowser\MediaBrowser.UI\bin\x86\Release\MediaBrowser.UI.exe</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
