@@ -1,10 +1,10 @@
-﻿using MediaBrowser.Common.Serialization;
-using MediaBrowser.Controller;
+﻿using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
 using Trakt.Model;
 
@@ -23,12 +23,12 @@ namespace Trakt.Api
         /// <param name="mediaStatus">MediaStatus enum dictating whether item is being watched or scrobbled</param>
         /// <param name="traktUser">The user that watching the current movie</param>
         /// <returns>A standard TraktResponseDTO</returns>
-        public static Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser)
+        public static Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
-            return SendMovieStatusUpdate(movie, mediaStatus, traktUser);
+            return SendMovieStatusUpdate(movie, mediaStatus, traktUser, jsonSerializer);
         }
 
-        private static async Task<TraktResponseDataContract> SendMovieStatusUpdate(Movie movie, MediaStatus status, TraktUser traktUser)
+        private static async Task<TraktResponseDataContract> SendMovieStatusUpdate(Movie movie, MediaStatus status, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
             
@@ -48,7 +48,7 @@ namespace Trakt.Api
             else if (status == MediaStatus.Scrobble)
                 response = await Kernel.Instance.HttpManager.Post(TraktUris.MovieScrobble, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -60,12 +60,12 @@ namespace Trakt.Api
         /// <param name="status">Enum indicating whether an episode is being watched or scrobbled</param>
         /// <param name="traktUser">The user that's watching the episode</param>
         /// <returns>A standard TraktResponseDTO</returns>
-        public static Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
+        public static Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
-            return SendEpisodeStatusUpdate(episode, status, traktUser);
+            return SendEpisodeStatusUpdate(episode, status, traktUser, jsonSerializer);
         }
 
-        private static async Task<TraktResponseDataContract> SendEpisodeStatusUpdate(Episode episode, MediaStatus status, TraktUser traktUser)
+        private static async Task<TraktResponseDataContract> SendEpisodeStatusUpdate(Episode episode, MediaStatus status, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
 
@@ -86,7 +86,7 @@ namespace Trakt.Api
             else if (status == MediaStatus.Scrobble)
                 response = await Kernel.Instance.HttpManager.Post(TraktUris.ShowScrobble, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -97,12 +97,12 @@ namespace Trakt.Api
         /// <param name="movies">The movies to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <returns></returns>
-        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser)
+        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
-            return SendLibraryUpdate(movies, traktUser);
+            return SendLibraryUpdate(movies, traktUser, jsonSerializer);
         }
 
-        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IEnumerable<Movie> movies, TraktUser traktUser)
+        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IEnumerable<Movie> movies, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             var moviesPayload = new List<object>();
 
@@ -122,14 +122,14 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("movies", JsonSerializer.SerializeToString(moviesPayload));
+            data.Add("movies", jsonSerializer.SerializeToString(moviesPayload));
 
             Stream response =
                 await
                 Kernel.Instance.HttpManager.Post(TraktUris.MovieLibrary, data, Kernel.Instance.ResourcePools.Trakt,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -140,12 +140,12 @@ namespace Trakt.Api
         /// <param name="episodes">The episodes to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <returns></returns>
-        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync (IReadOnlyList<Episode> episodes, TraktUser traktUser)
+        public static Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
-            return SendLibraryUpdate(episodes, traktUser);
+            return SendLibraryUpdate(episodes, traktUser, jsonSerializer);
         }
 
-        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IReadOnlyList<Episode> episodes, TraktUser traktUser)
+        private static async Task<TraktResponseDataContract> SendLibraryUpdate(IReadOnlyList<Episode> episodes, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             var episodesPayload = new List<object>();
 
@@ -167,15 +167,15 @@ namespace Trakt.Api
             data.Add("imdb_id", episodes[0].Series.ProviderIds["Imdb"]);
             data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
             data.Add("title", episodes[0].Series.Name);
-            data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());    
-            data.Add("episodes", JsonSerializer.SerializeToString(episodesPayload));
+            data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());
+            data.Add("episodes", jsonSerializer.SerializeToString(episodesPayload));
 
             Stream response =
                 await
                 Kernel.Instance.HttpManager.Post(TraktUris.ShowEpisodeLibrary, data, Kernel.Instance.ResourcePools.Trakt,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return JsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
     }
 }

@@ -2,6 +2,7 @@
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Threading.Tasks;
+using MediaBrowser.Model.Serialization;
 using Trakt.Api;
 using Trakt.Model;
 
@@ -19,15 +20,15 @@ namespace Trakt
         /// <param name="video">The video that the user has started watching</param>
         /// <param name="traktUser">The user who's watching the video</param>
         /// <returns></returns>
-        public static async Task SendWatchingState(Video video, TraktUser traktUser)
+        public static async Task SendWatchingState(Video video, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             if (video is Movie)
             {
-                await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).ConfigureAwait(false);
+                await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser, jsonSerializer).ConfigureAwait(false);
             }
             else if (video is Episode)
             {
-                await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).ConfigureAwait(false);
+                await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser, jsonSerializer).ConfigureAwait(false);
             }
         }
 
@@ -40,15 +41,15 @@ namespace Trakt
         /// <param name="video"> The video that has just finished</param>
         /// <param name="traktUser">The user who's finished watching the video</param>
         /// <returns></returns>
-        public static async Task SendScrobbleState(Video video, TraktUser traktUser)
+        public static async Task SendScrobbleState(Video video, TraktUser traktUser, IJsonSerializer jsonSerializer)
         {
             if (video is Movie)
             {
-                await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser).ConfigureAwait(false);
+                await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser, jsonSerializer).ConfigureAwait(false);
             }
             else if (video is Episode)
             {
-                await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser).ConfigureAwait(false);
+                await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser, jsonSerializer).ConfigureAwait(false);
             }
         }
         

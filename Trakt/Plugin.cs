@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Composition;
 using MediaBrowser.Common.Plugins;
+using MediaBrowser.Model.Serialization;
 using Trakt.Configuration;
 
 namespace Trakt
@@ -11,10 +12,18 @@ namespace Trakt
         private ServerMediator _mediator;
         private ClientMediator _clientMediator;
 
+        private readonly IJsonSerializer _jsonSerializer;
+
+        public Plugin(IJsonSerializer jsonSerializer)
+        {
+            _jsonSerializer = jsonSerializer;
+            Instance = this;
+        }
+
         protected override void InitializeOnServer(bool isFirstRun)
         {
             base.InitializeOnServer(isFirstRun);
-            _mediator = new ServerMediator();
+            _mediator = new ServerMediator(_jsonSerializer);
         }
 
 
@@ -61,11 +70,6 @@ namespace Trakt
 
 
         public static Plugin Instance { get; private set; }
-
-        public Plugin()
-        {
-            Instance = this;
-        }
 
 
         
