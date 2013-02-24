@@ -15,38 +15,4 @@ namespace Trakt
             return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => tUser.LinkedMbUserId == user.Id) : null;
         }
     }
-
-
-    internal static class CryptographyHelper
-    {
-        internal static string GetPasswordHash(string password, TraktUser currentUser, ILogger logger)
-        {
-            if (password != currentUser.PasswordHash)
-            {
-                try
-                {
-                    var bytes = Encoding.ASCII.GetBytes(password);
-                    var hashData = new SHA1Managed().ComputeHash(bytes);
-
-                    var hashPass = string.Empty;
-
-                    foreach (var b in hashData)
-                        hashPass += b.ToString("X2");
-                    
-                    return hashPass;
-                }
-                catch (Exception e)
-                {
-                    logger.ErrorException("Error hashing password", e, null);
-                    return null;
-                }
-            }
-            else
-            {
-                return currentUser.PasswordHash;
-            }
-
-            
-        }
-    }
 }

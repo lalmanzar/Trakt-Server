@@ -9,7 +9,6 @@ using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
-using MediaBrowser.Model.Tasks;
 using Trakt.Api;
 
 namespace Trakt.ScheduledTasks
@@ -28,7 +27,7 @@ namespace Trakt.ScheduledTasks
 
         protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            progress.Report(new TaskProgress { PercentComplete = 0 });
+            progress.Report(0);
             
             var processedItemCount = 0;
             var currentPercent = 0;
@@ -98,7 +97,7 @@ namespace Trakt.ScheduledTasks
                     {
                         currentPercent += 1;
                         processedItemCount = 0;
-                        progress.Report(new TaskProgress { PercentComplete = currentPercent <= 100 ? currentPercent : 100 });
+                        progress.Report(currentPercent <= 100 ? currentPercent : 100);
                     }
 
                 }
@@ -116,7 +115,7 @@ namespace Trakt.ScheduledTasks
             }
 
             
-            progress.Report(new TaskProgress { PercentComplete = 100 });
+            progress.Report(100);
         }
 
         public override string Name

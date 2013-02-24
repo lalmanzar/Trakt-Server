@@ -1,15 +1,14 @@
 ﻿using System;
-using MediaBrowser.Common.Logging;
 using MediaBrowser.Common.Serialization;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Trakt.Api.DataContracts;
 using Trakt.Model;
-using System.Threading;
 
 namespace Trakt.Api
 {
@@ -113,8 +112,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-
-                    Logger.LogInfo("Imdb Id not found for '" + m.Name + "'", null);
+                    //logger.LogInfo("Imdb Id not found for '" + m.Name + "'", null);
                 }
 
                 var movieData = new
@@ -182,7 +180,7 @@ namespace Trakt.Api
             }
             catch(Exception)
             {
-                Logger.LogInfo("Imdb Id not found for '" + episodes[0].Series.Name + "'", null);
+                //logger.LogInfo("Imdb Id not found for '" + episodes[0].Series.Name + "'", null);
             }
             try
             {
@@ -191,7 +189,7 @@ namespace Trakt.Api
             catch (Exception)
             {
 
-                Logger.LogInfo("Tvdb Id not found for '" + episodes[0].Series.Name + "'", null);
+                //logger.LogInfo("Tvdb Id not found for '" + episodes[0].Series.Name + "'", null);
             }
             data.Add("title", episodes[0].Series.Name);
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());    

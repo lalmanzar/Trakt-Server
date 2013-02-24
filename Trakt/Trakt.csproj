@@ -45,8 +45,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\MediaBrowser.Common.1.0.1\lib\net45\MediaBrowser.Model.dll</HintPath>
     </Reference>
-    <Reference Include="MediaBrowser.UI">
-      <HintPath>..\..\MediaBrowser\MediaBrowser.UI\bin\x86\Release\MediaBrowser.UI.exe</HintPath>
+    <Reference Include="MediaBrowser.UI, Version=2.9.4801.2519, Culture=neutral, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\MediaBrowser.Theater.Core.1.0.0\lib\net45\MediaBrowser.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="MediaBrowser.UI.Controls">
+      <HintPath>..\packages\MediaBrowser.Theater.Core.1.0.0\lib\net45\MediaBrowser.UI.Controls.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
