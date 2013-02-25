@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Linq;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Serialization;
 
 namespace Trakt
 {
@@ -15,9 +17,15 @@ namespace Trakt
     {
         private static Kernel _kernel;
 
-        public ServerMediator()
+        private readonly IJsonSerializer _jsonSerializer;
+        private readonly IHttpClient _httpClient;
+
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
             _kernel = Kernel.Instance;
+
+            _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
 
             _kernel.UserDataManager.PlaybackStart += KernelPlaybackStart;
             _kernel.UserDataManager.PlaybackProgress += KernelPlaybackProgress;
@@ -25,7 +33,7 @@ namespace Trakt
         }
 
 
-        private static async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
+        private async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
         {
             // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
             var traktUser = UserHelper.GetTraktUser(e.User);
@@ -39,18 +47,18 @@ namespace Trakt
                     traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                         location => e.Argument is Episode || e.Argument is Movie))
             {
-                await TraktGateway.SendWatchingState(e.Argument as Video, traktUser).ConfigureAwait(false);
+                await TraktGateway.SendWatchingState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
             }
         }
 
 
-        private static void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
+        private void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
         {
             throw new NotImplementedException();
         }
 
 
-        private static async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
+        private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
         {
             if (e.PlaybackPositionTicks == null) return;
 
@@ -70,7 +78,7 @@ namespace Trakt
                         traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                             location => e.Argument is Episode || e.Argument is Movie))
                 {
-                    await TraktGateway.SendScrobbleState(e.Argument as Video, traktUser).ConfigureAwait(false);
+                    await TraktGateway.SendScrobbleState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
                 }
             }
         }

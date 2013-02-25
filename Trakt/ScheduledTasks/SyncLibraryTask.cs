@@ -4,11 +4,14 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
-using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Logging;
+using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Tasks;
 using Trakt.Api;
 
 namespace Trakt.ScheduledTasks
@@ -20,39 +23,36 @@ namespace Trakt.ScheduledTasks
     [Export(typeof(IScheduledTask))]
     public class SyncLibraryTask : BaseScheduledTask<Kernel>
     {
-        protected override IEnumerable<BaseTaskTrigger> GetDefaultTriggers()
+        private readonly IHttpClient _httpClient;
+        private readonly IJsonSerializer _jsonSerializer;
+
+        public SyncLibraryTask(Kernel kernel, ITaskManager taskManager, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+            : base(kernel, taskManager, logger)
         {
-            return new List<BaseTaskTrigger>() ;
+            _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
+        }
+
+        public override IEnumerable<ITaskTrigger> GetDefaultTriggers()
+        {
+            return new List<ITaskTrigger>();
         }
 
         protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            progress.Report(0);
-            
-            var processedItemCount = 0;
-            var currentPercent = 0;
-            var maxPercentPerUser = 100/Kernel.Users.Count();
-            
             foreach (var user in Kernel.Users)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var libraryRoot = user.RootFolder;
+                var libaryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                if (traktUser == null || libraryRoot == null || traktUser.TraktLocations == null) continue;
-
-                // Used for progress reporting
-                var itemsPerPercent = libraryRoot.RecursiveChildren.Count()/maxPercentPerUser;
+                if (traktUser == null || libaryRoot == null || traktUser.TraktLocations == null) continue;
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
                 var currentShow = "";
 
-                foreach (var child in libraryRoot.RecursiveChildren.OfType<Video>())
+                foreach (var child in libaryRoot.RecursiveChildren)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
                     if (child.Path == null) continue;
 
                     foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
@@ -64,8 +64,7 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
-                                
+                                await TraktApi.SendLibraryUpdateAsync(movies, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
                                 movies.Clear();
                             }
                         }
@@ -82,40 +81,22 @@ namespace Trakt.ScheduledTasks
                             else
                             {
                                 // We're starting a new show. Finish up with the old one
-                                TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
-                                
+                                await TraktApi.SendLibraryUpdateAsync(episodes, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
                                 episodes.Clear();
 
                                 episodes.Add(ep);
                             }
                         }
                     }
-
-                    processedItemCount += 1;
-
-                    if (processedItemCount == itemsPerPercent)
-                    {
-                        currentPercent += 1;
-                        processedItemCount = 0;
-                        progress.Report(currentPercent <= 100 ? currentPercent : 100);
-                    }
-
                 }
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                {
-                    TraktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
-                }
+                    await TraktApi.SendLibraryUpdateAsync(movies, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
 
                 if (episodes.Count > 0)
-                {
-                    TraktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
-                }
+                    await TraktApi.SendLibraryUpdateAsync(episodes, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
             }
-
-            
-            progress.Report(100);
         }
 
         public override string Name
