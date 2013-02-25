@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -17,12 +18,14 @@ namespace Trakt
         private static Kernel _kernel;
 
         private readonly IJsonSerializer _jsonSerializer;
-        
-        public ServerMediator(IJsonSerializer jsonSerializer)
+        private readonly IHttpClient _httpClient;
+
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
             _kernel = Kernel.Instance;
 
             _jsonSerializer = jsonSerializer;
+            _httpClient = httpClient;
 
             _kernel.UserDataManager.PlaybackStart += KernelPlaybackStart;
             _kernel.UserDataManager.PlaybackProgress += KernelPlaybackProgress;
@@ -44,7 +47,7 @@ namespace Trakt
                     traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                         location => e.Argument is Episode || e.Argument is Movie))
             {
-                await TraktGateway.SendWatchingState(e.Argument as Video, traktUser, _jsonSerializer).ConfigureAwait(false);
+                await TraktGateway.SendWatchingState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
             }
         }
 
@@ -75,7 +78,7 @@ namespace Trakt
                         traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                             location => e.Argument is Episode || e.Argument is Movie))
                 {
-                    await TraktGateway.SendScrobbleState(e.Argument as Video, traktUser, _jsonSerializer).ConfigureAwait(false);
+                    await TraktGateway.SendScrobbleState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
                 }
             }
         }
