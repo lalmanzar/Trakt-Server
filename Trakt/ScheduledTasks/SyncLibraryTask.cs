@@ -21,26 +21,27 @@ namespace Trakt.ScheduledTasks
     /// titles, watched states will be synced in other tasks.
     /// </summary>
     [Export(typeof(IScheduledTask))]
-    public class SyncLibraryTask : BaseScheduledTask<Kernel>
+    public class SyncLibraryTask : IScheduledTask
     {
         private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
+        private readonly Kernel _kernel;
 
-        public SyncLibraryTask(Kernel kernel, ITaskManager taskManager, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer)
-            : base(kernel, taskManager, logger)
+        public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
+            _kernel = kernel;
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
         }
 
-        public override IEnumerable<ITaskTrigger> GetDefaultTriggers()
+        public IEnumerable<ITaskTrigger> GetDefaultTriggers()
         {
             return new List<ITaskTrigger>();
         }
 
-        protected override async Task ExecuteInternal(CancellationToken cancellationToken, IProgress<double> progress)
+        public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            foreach (var user in Kernel.Users)
+            foreach (var user in _kernel.Users)
             {
                 var libaryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
@@ -99,12 +100,12 @@ namespace Trakt.ScheduledTasks
             }
         }
 
-        public override string Name
+        public string Name
         {
             get { return "Sync library to trakt.tv"; }
         }
 
-        public override string Category
+        public string Category
         {
             get
             {
@@ -112,7 +113,7 @@ namespace Trakt.ScheduledTasks
             }
         }
 
-        public override string Description
+        public string Description
         {
             get
             {
