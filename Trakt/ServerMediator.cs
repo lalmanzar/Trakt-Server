@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
-using MediaBrowser.Common.Net;
-using MediaBrowser.Controller;
+﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Serialization;
+using System;
+using System.Linq;
 
 namespace Trakt
 {
@@ -15,21 +15,19 @@ namespace Trakt
     /// </summary>
     internal class ServerMediator : IDisposable
     {
-        private static Kernel _kernel;
-
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
+        private readonly IUserManager _userManager;
 
-        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
-            _kernel = Kernel.Instance;
-
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
+            _userManager = userManager;
 
-            _kernel.UserDataManager.PlaybackStart += KernelPlaybackStart;
-            _kernel.UserDataManager.PlaybackProgress += KernelPlaybackProgress;
-            _kernel.UserDataManager.PlaybackStopped += KernelPlaybackStopped;
+            userManager.PlaybackStart += KernelPlaybackStart;
+            userManager.PlaybackProgress += KernelPlaybackProgress;
+            userManager.PlaybackStopped += KernelPlaybackStopped;
         }
 
 
@@ -56,7 +54,6 @@ namespace Trakt
         {
             throw new NotImplementedException();
         }
-
 
         private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
         {
@@ -85,10 +82,9 @@ namespace Trakt
 
         public void Dispose()
         {
-            _kernel.UserDataManager.PlaybackStart -= KernelPlaybackStart;
-            _kernel.UserDataManager.PlaybackProgress -= KernelPlaybackProgress;
-            _kernel.UserDataManager.PlaybackStopped -= KernelPlaybackStopped;
-            _kernel = null;
+            _userManager.PlaybackStart -= KernelPlaybackStart;
+            _userManager.PlaybackProgress -= KernelPlaybackProgress;
+            _userManager.PlaybackStopped -= KernelPlaybackStopped;
         }
     }
 }

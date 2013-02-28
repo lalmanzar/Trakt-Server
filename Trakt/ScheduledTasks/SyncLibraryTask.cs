@@ -9,6 +9,7 @@ using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
@@ -26,12 +27,14 @@ namespace Trakt.ScheduledTasks
         private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly Kernel _kernel;
+        private readonly IUserManager _userManager;
 
-        public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
             _kernel = kernel;
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
+            _userManager = userManager;
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -41,7 +44,7 @@ namespace Trakt.ScheduledTasks
 
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
-            foreach (var user in _kernel.Users)
+            foreach (var user in _userManager.Users)
             {
                 var libaryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
