@@ -9,7 +9,7 @@ using Trakt.Configuration;
 namespace Trakt
 {
     [Export(typeof(IPlugin))]
-    public class Plugin : BaseUiPlugin<PluginConfiguration>
+    public class Plugin : BasePlugin<PluginConfiguration>, IUIPlugin
     {
         private ServerMediator _mediator;
         private ClientMediator _clientMediator;
@@ -86,7 +86,7 @@ namespace Trakt
 
 
 
-        public override Version MinimumRequiredUIVersion
+        public Version MinimumRequiredUIVersion
         {
             get { return new Version(0, 0, 0, 1); }
         }
