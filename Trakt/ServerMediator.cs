@@ -3,6 +3,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace Trakt
     /// All communication between the server and the plugins server instance should occur in this class.
     /// Once the hookable events are created in core, they should be hooked here.
     /// </summary>
-    internal class ServerMediator : IDisposable
+    public class ServerMediator : IServerEntryPoint
     {
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
@@ -24,12 +25,14 @@ namespace Trakt
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
-
-            userManager.PlaybackStart += KernelPlaybackStart;
-            userManager.PlaybackProgress += KernelPlaybackProgress;
-            userManager.PlaybackStopped += KernelPlaybackStopped;
         }
 
+        public void Run()
+        {
+            _userManager.PlaybackStart += KernelPlaybackStart;
+            _userManager.PlaybackProgress += KernelPlaybackProgress;
+            _userManager.PlaybackStopped += KernelPlaybackStopped;
+        }
 
         private async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
         {
@@ -52,7 +55,6 @@ namespace Trakt
 
         private void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
         {
-            throw new NotImplementedException();
         }
 
         private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
