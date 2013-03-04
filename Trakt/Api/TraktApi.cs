@@ -45,9 +45,9 @@ namespace Trakt.Api
             Stream response = null;
 
             if (status == MediaStatus.Watching)
-                response = await httpClient.Post(TraktUris.MovieWatching, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await httpClient.Post(TraktUris.MovieWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
-                response = await httpClient.Post(TraktUris.MovieScrobble, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await httpClient.Post(TraktUris.MovieScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
@@ -83,9 +83,9 @@ namespace Trakt.Api
             Stream response = null;
 
             if (status == MediaStatus.Watching)
-                response = await httpClient.Post(TraktUris.ShowWatching, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
-                response = await httpClient.Post(TraktUris.ShowScrobble, data, Kernel.Instance.ResourcePools.Trakt, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
@@ -127,7 +127,7 @@ namespace Trakt.Api
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.MovieLibrary, data, Kernel.Instance.ResourcePools.Trakt,
+                httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
@@ -173,7 +173,7 @@ namespace Trakt.Api
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Kernel.Instance.ResourcePools.Trakt,
+                httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
