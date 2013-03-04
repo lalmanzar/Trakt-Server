@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Common.Kernel;
+﻿using System.Threading;
+using MediaBrowser.Common.Configuration;
+using MediaBrowser.Common.Kernel;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Serialization;
 using System;
@@ -10,7 +12,10 @@ namespace Trakt
     [Export(typeof(IPlugin))]
     public class Plugin : BasePlugin<PluginConfiguration>, IUIPlugin
     {
-        public Plugin(IKernel kernel, IXmlSerializer xmlSerializer) : base(kernel, xmlSerializer)
+        public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(5,5);
+
+        public Plugin(IApplicationPaths appPaths, IXmlSerializer xmlSerializer)
+            : base(appPaths, xmlSerializer)
         {
             Instance = this;
         }
