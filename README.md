@@ -1,4 +1,4 @@
-trakt-mb3
+Trakt for MediaBrowser 3
 =========
 
 Community driven trakt.tv plugin for MediaBrowser 3. 
@@ -10,5 +10,5 @@ Community driven trakt.tv plugin for MediaBrowser 3.
 
 ## Related Sites ##
 
-http://trakt.tv
+http://trakt.tv  
 http://trakt.tv/api-docs
