@@ -197,6 +197,8 @@ namespace Trakt.Api
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
                 data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
+                data.Add("episode", ((Episode)item).IndexNumber.ToString());
                 url = TraktUris.RateEpisode;
             }
             else // It's a Series
@@ -208,6 +210,52 @@ namespace Trakt.Api
             }
 
             data.Add("rating", rating);
+
+            Stream response =
+                await
+                httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
+                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        public static async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        {
+            string url = "";
+            var data = new Dictionary<string, string>();
+
+            data.Add("username", traktUser.UserName);
+            data.Add("password", traktUser.PasswordHash);
+            data.Add("imdb_id", item.ProviderIds["Imdb"]);
+
+            if (item is Movie)
+            {
+                data.Add("title", item.Name);
+                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+                url = TraktUris.CommentMovie;
+            }
+            else if (item is Episode)
+            {
+                data.Add("title", ((Episode)item).Series.Name);
+                data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
+                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
+                data.Add("episode", ((Episode)item).IndexNumber.ToString());
+                url = TraktUris.CommentEpisode;   
+            }
+            else // It's a Series
+            {
+                data.Add("title", item.Name);
+                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                url = TraktUris.CommentShow;
+            }
+
+            data.Add("comment", comment);
+            data.Add("spoiler", containsSpoilers.ToString());
+            data.Add("review", "false");
 
             Stream response =
                 await

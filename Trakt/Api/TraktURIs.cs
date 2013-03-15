@@ -38,10 +38,10 @@
         public const string RecommendationsMoviesDismiss = @"http://api.trakt.tv/recommendations/movies/dismiss/" + Devkey;
         public const string RecommendationsShowsDismiss = @"http://api.trakt.tv/recommendations/shows/dismiss/" + Devkey;
 
-        // Shout
-        public const string ShoutEpisode = @"http://api.trakt.tv/shout/episode/" + Devkey;
-        public const string ShoutMovie = @"http://api.trakt.tv/shout/movie/" + Devkey;
-        public const string ShoutShow = @"http://api.trakt.tv/shout/show/" + Devkey;
+        // Comment
+        public const string CommentEpisode = @"http://api.trakt.tv/comment/episode/" + Devkey;
+        public const string CommentMovie = @"http://api.trakt.tv/comment/movie/" + Devkey;
+        public const string CommentShow = @"http://api.trakt.tv/comment/show/" + Devkey;
 
         // Show
         public const string ShowCancelWatching = @"http://api.trakt.tv/show/cancelwatching/" + Devkey;
