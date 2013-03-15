@@ -20,6 +20,8 @@ namespace Trakt
         /// </summary>
         /// <param name="video">The video that the user has started watching</param>
         /// <param name="traktUser">The user who's watching the video</param>
+        /// <param name="httpClient"> </param>
+        /// <param name="jsonSerializer"> </param>
         /// <returns></returns>
         public static async Task SendWatchingState(Video video, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
@@ -34,13 +36,14 @@ namespace Trakt
         }
 
 
-
         /// <summary>
         /// Called when a video has been played past the MaxResumePercentage. Lets trakt.tv know to mark
         /// an item as watched.
         /// </summary>
         /// <param name="video"> The video that has just finished</param>
         /// <param name="traktUser">The user who's finished watching the video</param>
+        /// <param name="httpClient">The Server's httpClient instance </param>
+        /// <param name="jsonSerializer">The Server's jsonSerializer instance </param>
         /// <returns></returns>
         public static async Task SendScrobbleState(Video video, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
