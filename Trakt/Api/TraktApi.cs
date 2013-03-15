@@ -1,4 +1,5 @@
 ﻿using MediaBrowser.Common.Net;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
@@ -160,6 +161,57 @@ namespace Trakt.Api
             Stream response =
                 await
                 httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
+                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
+        /// Rate an item
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="rating"></param>
+        /// <param name="traktUser"></param>
+        /// <param name="httpClient"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <returns></returns>
+        public static async Task<TraktResponseDataContract> SendItemRating(BaseItem item, string rating, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        {
+            string url = "";
+            var data = new Dictionary<string, string>();
+
+            data.Add("username", traktUser.UserName);
+            data.Add("password", traktUser.PasswordHash);
+            data.Add("imdb_id", item.ProviderIds["Imdb"]);
+
+            if (item is Movie)
+            {
+                data.Add("title", item.Name);
+                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+                url = TraktUris.RateMovie;
+            }
+            else if (item is Episode)
+            {
+                data.Add("title", ((Episode)item).Series.Name);
+                data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
+                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                url = TraktUris.RateEpisode;
+            }
+            else // It's a Series
+            {
+                data.Add("title", item.Name);
+                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                url = TraktUris.RateShow;
+            }
+
+            data.Add("rating", rating);
+
+            Stream response =
+                await
+                httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
