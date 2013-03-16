@@ -62,6 +62,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Api\DataContracts\AccountSettingsDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktResponseDataContract.cs" />
     <Compile Include="Api\TraktApi.cs" />
     <Compile Include="Api\TraktURIs.cs" />

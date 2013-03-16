@@ -16,6 +16,49 @@ namespace Trakt.Api
     /// </summary>
     public static class TraktApi
     {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <param name="httpClient"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <returns></returns>
+        public static async Task<TraktResponseDataContract> AccountTest(TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        {
+            var data = new Dictionary<string, string> {{"username", traktUser.UserName}, {"password", traktUser.PasswordHash}};
+
+            Stream response =
+                await
+                httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
+                                                                     System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <param name="httpClient"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <returns></returns>
+        public static async Task<AccountSettingsDataContract> GetUserAccount(TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            Stream response =
+                await
+                httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
+                                                                     System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return jsonSerializer.DeserializeFromStream<AccountSettingsDataContract>(response);
+        }
+
+
+
         /// <summary>
         /// Report to trakt.tv that a movie is being watched, or has been watched.
         /// </summary>

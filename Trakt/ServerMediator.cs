@@ -12,7 +12,6 @@ namespace Trakt
 {
     /// <summary>
     /// All communication between the server and the plugins server instance should occur in this class.
-    /// Once the hookable events are created in core, they should be hooked here.
     /// </summary>
     public class ServerMediator : IServerEntryPoint
     {
