@@ -221,6 +221,16 @@ namespace Trakt.Api
 
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="comment"></param>
+        /// <param name="containsSpoilers"></param>
+        /// <param name="traktUser"></param>
+        /// <param name="httpClient"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <returns></returns>
         public static async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
         {
             string url = "";

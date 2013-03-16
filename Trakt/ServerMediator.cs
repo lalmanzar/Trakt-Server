@@ -5,8 +5,8 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Serialization;
-using System;
 using System.Linq;
+using Trakt.Api;
 
 namespace Trakt
 {
@@ -20,6 +20,14 @@ namespace Trakt
         private readonly IHttpClient _httpClient;
         private readonly IUserManager _userManager;
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="httpClient"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <param name="userManager"></param>
         public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
             _jsonSerializer = jsonSerializer;
@@ -27,6 +35,11 @@ namespace Trakt
             _userManager = userManager;
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Run()
         {
             _userManager.PlaybackStart += KernelPlaybackStart;
@@ -34,6 +47,13 @@ namespace Trakt
             _userManager.PlaybackStopped += KernelPlaybackStopped;
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
         {
             // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
@@ -48,15 +68,37 @@ namespace Trakt
                     traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                         location => e.Argument is Episode || e.Argument is Movie))
             {
-                await TraktGateway.SendWatchingState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                var video = e.Argument as Video;
+
+                if (video is Movie)
+                {
+                    await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                }
+                else if (video is Episode)
+                {
+                    await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                }
             }
         }
 
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
         {
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
         {
             if (e.PlaybackPositionTicks == null) return;
@@ -77,11 +119,25 @@ namespace Trakt
                         traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
                             location => e.Argument is Episode || e.Argument is Movie))
                 {
-                    await TraktGateway.SendScrobbleState(e.Argument as Video, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                    var video = e.Argument as Video;
+
+                    if (video is Movie)
+                    {
+                        await TraktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                    }
+                    else if (video is Episode)
+                    {
+                        await TraktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                    }
                 }
             }
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose()
         {
             _userManager.PlaybackStart -= KernelPlaybackStart;

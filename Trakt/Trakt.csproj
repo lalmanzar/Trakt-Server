@@ -77,7 +77,6 @@
     <Compile Include="ScheduledTasks\SyncLibraryTask.cs" />
     <Compile Include="ServerMediator.cs" />
     <Compile Include="TraktClientGateway.cs" />
-    <Compile Include="TraktGateway.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
