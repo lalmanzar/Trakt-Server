@@ -14,26 +14,32 @@ namespace Trakt.Api
     /// <summary>
     /// This class contains the actual api calls. These methods should not be called directly. Instead make all plugin calls to methods contained in TraktGateway
     /// </summary>
-    public static class TraktApi
+    public class TraktApi
     {
+        private readonly IHttpClient _httpClient;
+        private readonly IJsonSerializer _jsonSerializer;
+
+        public TraktApi(IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        {
+            _httpClient = httpClient;
+            _jsonSerializer = jsonSerializer;
+        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="traktUser"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="jsonSerializer"></param>
         /// <returns></returns>
-        public static async Task<TraktResponseDataContract> AccountTest(TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> AccountTest(TraktUser traktUser)
         {
             var data = new Dictionary<string, string> {{"username", traktUser.UserName}, {"password", traktUser.PasswordHash}};
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -42,19 +48,17 @@ namespace Trakt.Api
         /// 
         /// </summary>
         /// <param name="traktUser"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="jsonSerializer"></param>
         /// <returns></returns>
-        public static async Task<AccountSettingsDataContract> GetUserAccount(TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<AccountSettingsDataContract> GetUserAccount(TraktUser traktUser)
         {
             var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<AccountSettingsDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<AccountSettingsDataContract>(response);
         }
 
 
@@ -65,10 +69,8 @@ namespace Trakt.Api
         /// <param name="movie">The movie being watched/scrobbled</param>
         /// <param name="mediaStatus">MediaStatus enum dictating whether item is being watched or scrobbled</param>
         /// <param name="traktUser">The user that watching the current movie</param>
-        /// <param name="httpClient"> </param>
-        /// <param name="jsonSerializer"> </param>
         /// <returns>A standard TraktResponseDTO</returns>
-        public static async Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
             
@@ -84,11 +86,11 @@ namespace Trakt.Api
             Stream response = null;
 
             if (mediaStatus == MediaStatus.Watching)
-                response = await httpClient.Post(TraktUris.MovieWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await _httpClient.Post(TraktUris.MovieWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (mediaStatus == MediaStatus.Scrobble)
-                response = await httpClient.Post(TraktUris.MovieScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await _httpClient.Post(TraktUris.MovieScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -99,10 +101,8 @@ namespace Trakt.Api
         /// <param name="episode">The episode being watched</param>
         /// <param name="status">Enum indicating whether an episode is being watched or scrobbled</param>
         /// <param name="traktUser">The user that's watching the episode</param>
-        /// <param name="httpClient"> </param>
-        /// <param name="jsonSerializer"> </param>
         /// <returns>A standard TraktResponseDTO</returns>
-        public static async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
 
@@ -119,11 +119,11 @@ namespace Trakt.Api
             Stream response = null;
 
             if (status == MediaStatus.Watching)
-                response = await httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await _httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
-                response = await httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
+                response = await _httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -133,10 +133,8 @@ namespace Trakt.Api
         /// </summary>
         /// <param name="movies">The movies to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
-        /// <param name="httpClient"> </param>
-        /// <param name="jsonSerializer"> </param>
         /// <returns></returns>
-        public static async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser)
         {
             var moviesPayload = new List<object>();
 
@@ -156,14 +154,14 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("movies", jsonSerializer.SerializeToString(moviesPayload));
+            data.Add("movies", _jsonSerializer.SerializeToString(moviesPayload));
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
                                                                      System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -173,10 +171,8 @@ namespace Trakt.Api
         /// </summary>
         /// <param name="episodes">The episodes to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
-        /// <param name="httpClient"> </param>
-        /// <param name="jsonSerializer"> </param>
         /// <returns></returns>
-        public static async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser)
         {
             var episodesPayload = new List<object>();
 
@@ -199,14 +195,14 @@ namespace Trakt.Api
             data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
             data.Add("title", episodes[0].Series.Name);
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());
-            data.Add("episodes", jsonSerializer.SerializeToString(episodesPayload));
+            data.Add("episodes", _jsonSerializer.SerializeToString(episodesPayload));
 
             Stream response =
                 await
-                httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -217,10 +213,8 @@ namespace Trakt.Api
         /// <param name="item"></param>
         /// <param name="rating"></param>
         /// <param name="traktUser"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="jsonSerializer"></param>
         /// <returns></returns>
-        public static async Task<TraktResponseDataContract> SendItemRating(BaseItem item, string rating, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendItemRating(BaseItem item, string rating, TraktUser traktUser)
         {
             string url = "";
             var data = new Dictionary<string, string>();
@@ -256,10 +250,10 @@ namespace Trakt.Api
 
             Stream response =
                 await
-                httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
 
@@ -271,10 +265,8 @@ namespace Trakt.Api
         /// <param name="comment"></param>
         /// <param name="containsSpoilers"></param>
         /// <param name="traktUser"></param>
-        /// <param name="httpClient"></param>
-        /// <param name="jsonSerializer"></param>
         /// <returns></returns>
-        public static async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser)
         {
             string url = "";
             var data = new Dictionary<string, string>();
@@ -312,10 +304,10 @@ namespace Trakt.Api
 
             Stream response =
                 await
-                httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
-            return jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
     }
 }

@@ -12,7 +12,6 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
-using MediaBrowser.Model.Tasks;
 using Trakt.Api;
 
 namespace Trakt.ScheduledTasks
@@ -28,6 +27,7 @@ namespace Trakt.ScheduledTasks
         private readonly IJsonSerializer _jsonSerializer;
         private readonly Kernel _kernel;
         private readonly IUserManager _userManager;
+        private TraktApi traktApi;
 
         public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
@@ -35,6 +35,7 @@ namespace Trakt.ScheduledTasks
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
+            traktApi = new TraktApi(_httpClient, _jsonSerializer);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -68,7 +69,7 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                await TraktApi.SendLibraryUpdateAsync(movies, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
                                 movies.Clear();
                             }
                         }
@@ -85,7 +86,7 @@ namespace Trakt.ScheduledTasks
                             else
                             {
                                 // We're starting a new show. Finish up with the old one
-                                await TraktApi.SendLibraryUpdateAsync(episodes, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
                                 episodes.Clear();
 
                                 episodes.Add(ep);
@@ -96,10 +97,10 @@ namespace Trakt.ScheduledTasks
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                    await TraktApi.SendLibraryUpdateAsync(movies, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
 
                 if (episodes.Count > 0)
-                    await TraktApi.SendLibraryUpdateAsync(episodes, traktUser, _httpClient, _jsonSerializer).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
             }
         }
 
