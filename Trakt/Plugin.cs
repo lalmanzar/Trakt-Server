@@ -49,7 +49,7 @@ namespace Trakt
 
         public Version MinimumRequiredUIVersion
         {
-            get { return new Version(0, 0, 0, 1); }
+            get { return new Version(3, 0, 4824, 0); }
         }
     }
 }
