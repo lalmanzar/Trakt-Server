@@ -4,6 +4,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
@@ -18,6 +19,7 @@ namespace Trakt
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
         private readonly IUserManager _userManager;
+        private readonly ILogger _logger;
         private TraktApi _traktApi;
 
 
@@ -28,11 +30,13 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
-        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
+        /// <param name="logger"></param>
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, ILogger logger)
         {
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
+            _logger = logger;
             _traktApi = new TraktApi(_httpClient, _jsonSerializer);
         }
 
@@ -57,6 +61,7 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
         {
+            _logger.Info("TRAKT: Playback Started");
             // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
             var traktUser = UserHelper.GetTraktUser(e.User);
 
@@ -73,6 +78,7 @@ namespace Trakt
 
                 if (video is Movie)
                 {
+                    
                     await _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).ConfigureAwait(false);
                 }
                 else if (video is Episode)

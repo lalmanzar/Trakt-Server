@@ -9,7 +9,7 @@ using Trakt.Configuration;
 namespace Trakt
 {
     [Export(typeof(IPlugin))]
-    public class Plugin : BasePlugin<PluginConfiguration>, IUIPlugin
+    public class Plugin : BasePlugin<PluginConfiguration>, IPlugin
     {
         public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(5,5);
 
@@ -43,13 +43,6 @@ namespace Trakt
         public PluginConfiguration PluginConfiguration
         {
             get { return Configuration; }
-        }
-
-
-
-        public Version MinimumRequiredUIVersion
-        {
-            get { return new Version(3, 0, 4824, 0); }
         }
     }
 }

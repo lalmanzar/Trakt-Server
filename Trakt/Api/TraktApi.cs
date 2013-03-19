@@ -12,7 +12,7 @@ using Trakt.Model;
 namespace Trakt.Api
 {
     /// <summary>
-    /// This class contains the actual api calls. These methods should not be called directly. Instead make all plugin calls to methods contained in TraktGateway
+    /// This class contains the actual api calls. These methods should not be called directly. Instead make all plugin calls to methods contained in ServerMediator
     /// </summary>
     public class TraktApi
     {
