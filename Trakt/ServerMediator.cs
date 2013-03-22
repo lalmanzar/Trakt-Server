@@ -71,10 +71,10 @@ namespace Trakt
 
             foreach (
                 var location in
-                    traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
-                        location => e.Argument is Episode || e.Argument is Movie))
+                    traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                        location => e.Item is Episode || e.Item is Movie))
             {
-                var video = e.Argument as Video;
+                var video = e.Item as Video;
 
                 if (video is Movie)
                 {
@@ -110,7 +110,7 @@ namespace Trakt
         {
             if (e.PlaybackPositionTicks == null) return;
 
-            var userData = e.Argument.GetUserData(e.User, false);
+            var userData = e.Item.GetUserData(e.User, false);
 
             if (userData.Played)
             {
@@ -123,10 +123,10 @@ namespace Trakt
 
                 foreach (
                     var location in 
-                        traktUser.TraktLocations.Where(location => e.Argument.Path.Contains(location + "\\")).Where(
-                            location => e.Argument is Episode || e.Argument is Movie))
+                        traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                            location => e.Item is Episode || e.Item is Movie))
                 {
-                    var video = e.Argument as Video;
+                    var video = e.Item as Video;
 
                     if (video is Movie)
                     {
