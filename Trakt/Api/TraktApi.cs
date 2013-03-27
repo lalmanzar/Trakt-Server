@@ -214,7 +214,7 @@ namespace Trakt.Api
         /// <param name="rating"></param>
         /// <param name="traktUser"></param>
         /// <returns></returns>
-        public async Task<TraktResponseDataContract> SendItemRating(BaseItem item, string rating, TraktUser traktUser)
+        public async Task<TraktResponseDataContract> SendItemRating(BaseItem item, int rating, TraktUser traktUser)
         {
             string url = "";
             var data = new Dictionary<string, string>();
@@ -246,7 +246,7 @@ namespace Trakt.Api
                 url = TraktUris.RateShow;
             }
 
-            data.Add("rating", rating);
+            data.Add("rating", rating.ToString());
 
             Stream response =
                 await
@@ -265,8 +265,9 @@ namespace Trakt.Api
         /// <param name="comment"></param>
         /// <param name="containsSpoilers"></param>
         /// <param name="traktUser"></param>
+        /// <param name="isReview"></param>
         /// <returns></returns>
-        public async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser)
+        public async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, bool isReview = false)
         {
             string url = "";
             var data = new Dictionary<string, string>();
@@ -300,7 +301,7 @@ namespace Trakt.Api
 
             data.Add("comment", comment);
             data.Add("spoiler", containsSpoilers.ToString());
-            data.Add("review", "false");
+            data.Add("review", isReview.ToString());
 
             Stream response =
                 await
@@ -308,6 +309,45 @@ namespace Trakt.Api
                                                  System.Threading.CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<List<TraktMovieDataContract>> SendMovieRecommendationsRequest(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string>
+                           {{"username", traktUser.UserName}, {"password", traktUser.PasswordHash}};
+
+            Stream response =
+                await
+                _httpClient.Post(TraktUris.RecommendationsMovies, data, Plugin.Instance.TraktResourcePool,
+                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<List<TraktMovieDataContract>>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<List<TraktShowDataContract>> SendShowRecommendationsRequest(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            Stream response =
+                await
+                _httpClient.Post(TraktUris.RecommendationsShows, data, Plugin.Instance.TraktResourcePool,
+                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<List<TraktShowDataContract>>(response);
         }
     }
 }

@@ -14,5 +14,11 @@ namespace Trakt
         {
             return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => tUser.LinkedMbUserId == user.Id) : null;
         }
+
+        public static TraktUser GetTraktUser(string userId)
+        {
+            var userGuid = new Guid(userId);
+            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => tUser.LinkedMbUserId == userGuid) : null;
+        }
     }
 }

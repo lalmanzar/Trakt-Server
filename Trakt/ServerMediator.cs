@@ -21,6 +21,7 @@ namespace Trakt
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
         private TraktApi _traktApi;
+        private TraktUriService _service;
 
 
 
@@ -38,6 +39,7 @@ namespace Trakt
             _userManager = userManager;
             _logger = logger;
             _traktApi = new TraktApi(_httpClient, _jsonSerializer);
+            _service = new TraktUriService(_traktApi, _userManager);
         }
 
 
@@ -150,6 +152,7 @@ namespace Trakt
             _userManager.PlaybackStart -= KernelPlaybackStart;
             _userManager.PlaybackProgress -= KernelPlaybackProgress;
             _userManager.PlaybackStopped -= KernelPlaybackStopped;
+            _service = null;
             _traktApi = null;
         }
     }
