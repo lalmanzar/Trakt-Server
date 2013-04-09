@@ -112,7 +112,7 @@ namespace Trakt
         {
             if (e.PlaybackPositionTicks == null) return;
 
-            var userData = e.Item.GetUserData(e.User, false);
+            var userData = await _userManager.GetUserData(e.User.Id, e.Item.UserDataId).ConfigureAwait(false);
 
             if (userData.Played)
             {
