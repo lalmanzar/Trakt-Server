@@ -3,6 +3,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
@@ -19,6 +20,7 @@ namespace Trakt
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
         private readonly IUserManager _userManager;
+        private readonly IUserDataRepository _userDataRepository;
         private readonly ILogger _logger;
         private TraktApi _traktApi;
         private TraktUriService _service;
@@ -31,14 +33,16 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
+        /// <param name="userDataRepository"></param>
         /// <param name="logger"></param>
-        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, ILogger logger)
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository, ILogger logger)
         {
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
+            _userDataRepository = userDataRepository;
             _logger = logger;
-            _traktApi = new TraktApi(_httpClient, _jsonSerializer);
+            _traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager);
         }
 
@@ -112,7 +116,8 @@ namespace Trakt
         {
             if (e.PlaybackPositionTicks == null) return;
 
-            var userData = await _userManager.GetUserData(e.User.Id, e.Item.UserDataId).ConfigureAwait(false);
+
+            var userData = await _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey()).ConfigureAwait(false);
 
             if (userData.Played)
             {

@@ -35,7 +35,7 @@ namespace Trakt.ScheduledTasks
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
-            traktApi = new TraktApi(_httpClient, _jsonSerializer);
+            traktApi = new TraktApi(_httpClient, _jsonSerializer, logger);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()

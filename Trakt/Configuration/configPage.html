@@ -50,11 +50,12 @@
 
                             Dashboard.showLoadingMsg();
 
-                            ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function(config) {
+                            ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function (config) {
 
-                                var currentUserConfig = config.TraktUsers.filter(function(curr) {
+                                var currentUserConfig = config.TraktUsers.filter(function (curr) {
 
                                     return curr.LinkedMbUserId == userId;
+                                    //return true;
                                 })[0];
 
                                 var page = $.mobile.activePage;
@@ -152,7 +153,7 @@
 
                     Dashboard.showLoadingMsg();
 
-                    var page = this;
+                    var page = $.mobile.activePage;
 
                     ApiClient.getUsers().done(function(users) {
 
@@ -188,18 +189,26 @@
 
                         if (currentUserConfig.PasswordHash != $('#txtTraktPassword', page).val()) {
                             currentUserConfig.PasswordHash = SHA1($('#txtTraktPassword', page).val());
-
-                            currentUserConfig.LinkedMbUserId = currentUserId;
-
-                            currentUserConfig.TraktLocations = $('.chkTraktLocation:checked', page).map(function() {
-
-                                return this.getAttribute('data-location');
-
-                            }).get();
-
-                            ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).done(Dashboard.processPluginConfigurationUpdateResult);
                         }
-                        ;
+
+                        currentUserConfig.LinkedMbUserId = currentUserId;
+
+                        currentUserConfig.TraktLocations = $('.chkTraktLocation:checked', page).map(function() {
+
+                            return this.getAttribute('data-location');
+
+                        }).get();
+
+                        ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).done(Dashboard.processPluginConfigurationUpdateResult);
+                        
+                        ApiClient.getUsers().done(function (users) {
+
+                            TraktConfigurationPage.populateUsers(users);
+
+                            currentUserId = $('#selectUser', page).val();
+
+                            TraktConfigurationPage.loadConfiguration(currentUserId);
+                        });
 
                         return false;
                     });

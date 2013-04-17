@@ -8,7 +8,7 @@ namespace Trakt.Model
 
         public String PasswordHash { get; set; }
 
-        public Guid LinkedMbUserId { get; set; }
+        public String LinkedMbUserId { get; set; }
 
         public String[] TraktLocations { get; set; }
     }

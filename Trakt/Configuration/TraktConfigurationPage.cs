@@ -9,7 +9,6 @@ namespace Trakt.Configuration
     /// <summary>
     /// Class TraktConfigurationPage
     /// </summary>
-    [Export(typeof(IPluginConfigurationPage))]
     class TraktConfigurationPage : IPluginConfigurationPage
     {
         /// <summary>

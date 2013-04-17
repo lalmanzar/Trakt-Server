@@ -1,10 +1,12 @@
-﻿using MediaBrowser.Common.Net;
+﻿using System;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
 using Trakt.Model;
@@ -18,11 +20,13 @@ namespace Trakt.Api
     {
         private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
+        private readonly ILogger _logger;
 
-        public TraktApi(IHttpClient httpClient, IJsonSerializer jsonSerializer)
+        public TraktApi(IHttpClient httpClient, IJsonSerializer jsonSerializer, ILogger logger)
         {
             _httpClient = httpClient;
             _jsonSerializer = jsonSerializer;
+            _logger = logger;
         }
 
         /// <summary>
@@ -76,8 +80,18 @@ namespace Trakt.Api
             
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", movie.ProviderIds["Imdb"]);
-            data.Add("tmdb_id", movie.ProviderIds["Tmdb"]);
+            try
+            {
+                data.Add("imdb_id", movie.ProviderIds["Imdb"]);
+            }
+            catch (Exception)
+            {}
+            try
+            {
+                data.Add("tmdb_id", movie.ProviderIds["Tmdb"]);
+            }
+            catch (Exception)
+            {}
             data.Add("title", movie.Name);
             data.Add("year", movie.ProductionYear.ToString());
             data.Add("duration", ((int)((movie.RunTimeTicks / 10000000) / 60)).ToString());
@@ -105,24 +119,45 @@ namespace Trakt.Api
         public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
-
+            _logger.Info("TRAKT: 1");
             data.Add("username", traktUser.UserName);
+            _logger.Info("TRAKT: 2");
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", episode.ProviderIds["Imdb"]);
-            data.Add("tvdb_id", episode.ProviderIds["Tvdb"]);
+            try 
+            {
+                _logger.Info("TRAKT: 3");
+                data.Add("imdb_id", episode.ProviderIds["Imdb"]);
+            }
+            catch(Exception)
+            {
+                _logger.Info("TRAKT: 3b");
+            }
+            try
+            {
+                _logger.Info("TRAKT: 4");
+                data.Add("tvdb_id", episode.ProviderIds["Tvdb"]);
+            }
+            catch(Exception)
+            {
+                _logger.Info("TRAKT: 4b");
+            }
+            _logger.Info("TRAKT: 5");
             data.Add("title", episode.Name);
+            _logger.Info("TRAKT: 6");
             data.Add("year", episode.ProductionYear.ToString());
+            _logger.Info("TRAKT: 7");
             data.Add("season", episode.Season.IndexNumber.ToString());
+            _logger.Info("TRAKT: 8");
             data.Add("episode", episode.IndexNumber.ToString());
+            _logger.Info("TRAKT: 9");
             data.Add("duration", ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString());
-
             Stream response = null;
-
+            _logger.Info("TRAKT: 10");
             if (status == MediaStatus.Watching)
                 response = await _httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
                 response = await _httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
-
+            _logger.Info("TRAKT: 11");
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
@@ -191,8 +226,19 @@ namespace Trakt.Api
             
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", episodes[0].Series.ProviderIds["Imdb"]);
-            data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
+            try
+            {
+                data.Add("imdb_id", episodes[0].Series.ProviderIds["Imdb"]);
+            }
+            catch (Exception)
+            {}
+            try
+            {
+                data.Add("tvdb_id", episodes[0].Series.ProviderIds["Tvdb"]);
+            }
+            catch (Exception)
+            {}
+            
             data.Add("title", episodes[0].Series.Name);
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());
             data.Add("episodes", _jsonSerializer.SerializeToString(episodesPayload));
@@ -221,7 +267,12 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            try
+            {
+                data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            }
+            catch (Exception)
+            {}
 
             if (item is Movie)
             {
@@ -233,7 +284,13 @@ namespace Trakt.Api
             {
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
-                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                try
+                {
+                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                }
+                catch (Exception)
+                {}
+                
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
                 data.Add("episode", ((Episode)item).IndexNumber.ToString());
                 url = TraktUris.RateEpisode;
@@ -242,7 +299,12 @@ namespace Trakt.Api
             {
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                try
+                {
+                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                }
+                catch (Exception)
+                {}
                 url = TraktUris.RateShow;
             }
 
@@ -274,7 +336,12 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            try
+            {
+                data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            }
+            catch (Exception)
+            {}
 
             if (item is Movie)
             {
@@ -286,7 +353,13 @@ namespace Trakt.Api
             {
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
-                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                try
+                {
+                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                }
+                catch (Exception)
+                {}
+                
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
                 data.Add("episode", ((Episode)item).IndexNumber.ToString());
                 url = TraktUris.CommentEpisode;   
@@ -295,7 +368,13 @@ namespace Trakt.Api
             {
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-                data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                try
+                {
+                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                }
+                catch (Exception)
+                {}
+                
                 url = TraktUris.CommentShow;
             }
 
