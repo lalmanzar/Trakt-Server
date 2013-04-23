@@ -63,10 +63,21 @@ namespace Trakt.ScheduledTasks
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
-                var currentShow = "";
+                var currentSeriesId = Guid.Empty;
 
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
                     .Where(i => i is Episode || i is Movie)
+                    .OrderBy(i =>
+                    {
+                        var episode = i as Episode;
+
+                        if (episode != null)
+                        {
+                            return episode.SeriesItemId;
+                        }
+
+                        return i.Id;
+                    })
                     .ToList();
 
                 if (mediaItems.Count == 0) continue;
@@ -97,9 +108,9 @@ namespace Trakt.ScheduledTasks
                         {
                             var ep = child as Episode;
 
-                            if (string.IsNullOrEmpty(currentShow)) currentShow = ep.Series.Name;
+                            if (currentSeriesId == Guid.Empty) currentSeriesId = ep.SeriesItemId;
 
-                            if (currentShow.Equals(ep.Series.Name))
+                            if (currentSeriesId == ep.SeriesItemId)
                             {
                                 episodes.Add(ep);
                             }
