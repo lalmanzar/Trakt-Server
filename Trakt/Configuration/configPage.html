@@ -1,206 +1,208 @@
 ﻿<!DOCTYPE html>
 <html>
-    <head>
-        <title>Trakt Configuration</title>
-    </head>
-    <body>
-        <div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage">
-            <div data-role="content">
-                <div class="content-primary">
+<head>
+    <title>Trakt Configuration</title>
+</head>
+<body>
+    <div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
 
-                    <form id="traktConfigurationForm">
-                        <ul class="ulForm" data-role="listview">
-                            <li>
-                                <label for="selectUser">Configure Trakt for:</label>
-                                <select id="selectUser" name="selectUser" onchange=" TraktConfigurationPage.loadConfiguration(this.value); "></select>
-                            </li>
-                            <li>
-                                <label for="txtTraktUserName">
-                                    Trakt Username:
-                                </label>
-                                <input id="txtTraktUserName" name="txtTraktUserName" type="text" required="required" />
-                            </li>
-                            <li>
-                                <label for="txtTraktPassword">
-                                    Password:
-                                </label>
-                                <input id="txtTraktPassword" name="txtTraktPassword" type="password" required="required" />
-                            </li>
-                            <li>
-                                <label>Locations Monitored By Trakt:</label>
-                                <div id="divTraktLocations">
-                                </div>
-                            </li>
-                            <li>
-                                <button type="submit" data-theme="b">Save</button>
-                                <button type="button" onclick=" history.back(); ">Cancel</button>
-                            </li>
-                        </ul>
-                    </form>
-                </div>
+                <form id="traktConfigurationForm">
+                    <ul class="ulForm" data-role="listview">
+                        <li>
+                            <label for="selectUser">Configure Trakt for:</label>
+                            <select id="selectUser" name="selectUser" onchange=" TraktConfigurationPage.loadConfiguration(this.value); "></select>
+                        </li>
+                        <li>
+                            <label for="txtTraktUserName">
+                                Trakt Username:
+                            </label>
+                            <input id="txtTraktUserName" name="txtTraktUserName" type="text" required="required" />
+                        </li>
+                        <li>
+                            <label for="txtTraktPassword">
+                                Password:
+                            </label>
+                            <input id="txtTraktPassword" name="txtTraktPassword" type="password" required="required" />
+                        </li>
+                        <li>
+                            <label>Locations Monitored By Trakt:</label>
+                            <div id="divTraktLocations">
+                            </div>
+                        </li>
+                        <li>
+                            <button type="submit" data-theme="b">Save</button>
+                            <button type="button" onclick=" history.back(); ">Cancel</button>
+                        </li>
+                    </ul>
+                </form>
             </div>
-        
-            <script type="text/javascript">
+        </div>
 
-                var TraktConfigurationPage =
-                    {
-                        pluginUniqueId: "8abc6789-fde2-4705-8592-4028806fa343",
+        <script type="text/javascript">
 
-                        loadConfiguration: function(userId) {
+            var TraktConfigurationPage =
+                {
+                    pluginUniqueId: "8abc6789-fde2-4705-8592-4028806fa343",
 
-                            Dashboard.showLoadingMsg();
+                    loadConfiguration: function (userId) {
 
-                            ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function (config) {
+                        Dashboard.showLoadingMsg();
 
-                                var currentUserConfig = config.TraktUsers.filter(function (curr) {
+                        ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function (config) {
 
-                                    return curr.LinkedMbUserId == userId;
-                                    //return true;
-                                })[0];
+                            var currentUserConfig = config.TraktUsers.filter(function (curr) {
 
-                                var page = $.mobile.activePage;
-
-                                // User doesn't have a config, so create a default one.
-                                if (!currentUserConfig) {
-
-                                    // You don't have to put every property in here, just the ones the UI is expecting (below)
-                                    currentUserConfig = {
-                                        UserName: "",
-                                        PasswordHash: ""
-                                    };
-                                }
-
-                                // Default this to an empty array so the rendering code doesn't have to worry about it
-                                currentUserConfig.TraktLocations = currentUserConfig.TraktLocations || [];
-
-                                $('#txtTraktUserName', page).val(currentUserConfig.UserName);
-                                $('#txtTraktPassword', page).val(currentUserConfig.PasswordHash);
-
-                                // List the folders the user can access
-                                ApiClient.getVirtualFolders().done(function(result) {
-
-                                    TraktConfigurationPage.loadFolders(currentUserConfig, result);
-                                });
-
-                                Dashboard.hideLoadingMsg();
-                            });
-
-                        },
-
-                        populateUsers: function(users) {
-
-                            var html = "";
-
-                            for (var i = 0, length = users.length; i < length; i++) {
-
-                                var user = users[i];
-
-                                html += '<option value="' + user.Id + '">' + user.Name + '</option>';
-                            }
-
-                            $('#selectUser', $.mobile.activePage).html(html).selectmenu("refresh");
-                        },
-
-                        loadFolders: function(currentUserConfig, virtualFolders) {
+                                return curr.LinkedMbUserId == userId;
+                                //return true;
+                            })[0];
 
                             var page = $.mobile.activePage;
 
-                            var html = "";
+                            // User doesn't have a config, so create a default one.
+                            if (!currentUserConfig) {
 
-                            html += '<div data-role="controlgroup">';
-
-                            for (var i = 0, length = virtualFolders.length; i < length; i++) {
-
-                                var virtualFolder = virtualFolders[i];
-
-                                html += TraktConfigurationPage.getFolderHtml(currentUserConfig, virtualFolder, i);
+                                // You don't have to put every property in here, just the ones the UI is expecting (below)
+                                currentUserConfig = {
+                                    UserName: "",
+                                    PasswordHash: ""
+                                };
                             }
 
-                            html += '</div>';
+                            // Default this to an empty array so the rendering code doesn't have to worry about it
+                            currentUserConfig.TraktLocations = currentUserConfig.TraktLocations || [];
 
-                            $('#divTraktLocations', page).html(html).trigger('create');
+                            $('#txtTraktUserName', page).val(currentUserConfig.UserName);
+                            $('#txtTraktPassword', page).val(currentUserConfig.PasswordHash);
 
-                        },
+                            // List the folders the user can access
+                            ApiClient.getVirtualFolders().done(function (result) {
 
-                        getFolderHtml: function(currentUserConfig, virtualFolder, index) {
+                                TraktConfigurationPage.loadFolders(currentUserConfig, result);
+                            });
 
-                            var html = "";
+                            Dashboard.hideLoadingMsg();
+                        });
 
-                            for (var i = 0, length = virtualFolder.Locations.length; i < length; i++) {
+                    },
 
-                                var id = "chkFolder" + index + "_" + i;
+                    populateUsers: function (users) {
 
-                                var location = virtualFolder.Locations[i];
+                        var html = "";
 
-                                var isChecked = currentUserConfig.TraktLocations.filter(function(current) {
+                        for (var i = 0, length = users.length; i < length; i++) {
 
-                                    return current.toLowerCase() == location.toLowerCase();
+                            var user = users[i];
 
-                                }).length;
-
-                                var checkedAttribute = isChecked ? 'checked="checked"' : "";
-
-                                html += '<label for="' + id + '">' + location + '</label>';
-                                html += '<input class="chkTraktLocation" type="checkbox" data-mini="true" id="' + id + '" name="' + id + '" data-location="' + location + '" ' + checkedAttribute + ' />';
-                            }
-
-                            return html;
-
+                            html += '<option value="' + user.Id + '">' + user.Name + '</option>';
                         }
-                    };
 
-                $('#traktConfigurationPage').on('pageshow', function(event) {
+                        $('#selectUser', $.mobile.activePage).html(html).selectmenu("refresh");
+                    },
 
-                    Dashboard.showLoadingMsg();
+                    loadFolders: function (currentUserConfig, virtualFolders) {
 
-                    var page = $.mobile.activePage;
+                        var page = $.mobile.activePage;
 
-                    ApiClient.getUsers().done(function(users) {
+                        var html = "";
 
-                        TraktConfigurationPage.populateUsers(users);
+                        html += '<div data-role="controlgroup">';
 
-                        var currentUserId = $('#selectUser', page).val();
+                        for (var i = 0, length = virtualFolders.length; i < length; i++) {
 
-                        TraktConfigurationPage.loadConfiguration(currentUserId);
-                    });
-                });
+                            var virtualFolder = virtualFolders[i];
 
-                $('#traktConfigurationForm').on('submit', function(e) {
+                            html += TraktConfigurationPage.getFolderHtml(currentUserConfig, virtualFolder, i);
+                        }
 
-                    Dashboard.showLoadingMsg();
+                        html += '</div>';
 
-                    var page = $.mobile.activePage;
+                        $('#divTraktLocations', page).html(html).trigger('create');
+
+                    },
+
+                    getFolderHtml: function (currentUserConfig, virtualFolder, index) {
+
+                        var html = "";
+
+                        for (var i = 0, length = virtualFolder.Locations.length; i < length; i++) {
+
+                            var id = "chkFolder" + index + "_" + i;
+
+                            var location = virtualFolder.Locations[i];
+
+                            var isChecked = currentUserConfig.TraktLocations.filter(function (current) {
+
+                                return current.toLowerCase() == location.toLowerCase();
+
+                            }).length;
+
+                            var checkedAttribute = isChecked ? 'checked="checked"' : "";
+
+                            html += '<label for="' + id + '">' + location + '</label>';
+                            html += '<input class="chkTraktLocation" type="checkbox" data-mini="true" id="' + id + '" name="' + id + '" data-location="' + location + '" ' + checkedAttribute + ' />';
+                        }
+
+                        return html;
+
+                    }
+                };
+
+            $('#traktConfigurationPage').on('pageshow', function (event) {
+
+                Dashboard.showLoadingMsg();
+
+                var page = $.mobile.activePage;
+
+                ApiClient.getUsers().done(function (users) {
+
+                    TraktConfigurationPage.populateUsers(users);
+
                     var currentUserId = $('#selectUser', page).val();
 
-                    ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function(config) {
+                    TraktConfigurationPage.loadConfiguration(currentUserId);
+                });
+            });
 
-                        var currentUserConfig = config.TraktUsers.filter(function(curr) {
+            $('#traktConfigurationForm').on('submit', function (e) {
 
-                            return curr.LinkedMbUserId == currentUserId;
-                        })[0];
+                Dashboard.showLoadingMsg();
 
-                        // User doesn't have a config, so create a default one.
-                        if (!currentUserConfig) {
-                            currentUserConfig = { };
-                            config.TraktUsers.push(currentUserConfig);
-                        }
+                var page = $.mobile.activePage;
+                var currentUserId = $('#selectUser', page).val();
 
-                        currentUserConfig.UserName = $('#txtTraktUserName', page).val();
+                ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).done(function (config) {
 
-                        if (currentUserConfig.PasswordHash != $('#txtTraktPassword', page).val()) {
-                            currentUserConfig.PasswordHash = SHA1($('#txtTraktPassword', page).val());
-                        }
+                    var currentUserConfig = config.TraktUsers.filter(function (curr) {
 
-                        currentUserConfig.LinkedMbUserId = currentUserId;
+                        return curr.LinkedMbUserId == currentUserId;
+                    })[0];
 
-                        currentUserConfig.TraktLocations = $('.chkTraktLocation:checked', page).map(function() {
+                    // User doesn't have a config, so create a default one.
+                    if (!currentUserConfig) {
+                        currentUserConfig = {};
+                        config.TraktUsers.push(currentUserConfig);
+                    }
 
-                            return this.getAttribute('data-location');
+                    currentUserConfig.UserName = $('#txtTraktUserName', page).val();
 
-                        }).get();
+                    if (currentUserConfig.PasswordHash != $('#txtTraktPassword', page).val()) {
+                        currentUserConfig.PasswordHash = SHA1($('#txtTraktPassword', page).val());
+                    }
 
-                        ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).done(Dashboard.processPluginConfigurationUpdateResult);
-                        
+                    currentUserConfig.LinkedMbUserId = currentUserId;
+
+                    currentUserConfig.TraktLocations = $('.chkTraktLocation:checked', page).map(function () {
+
+                        return this.getAttribute('data-location');
+
+                    }).get();
+
+                    ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).done(function (result) {
+
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+
                         ApiClient.getUsers().done(function (users) {
 
                             TraktConfigurationPage.populateUsers(users);
@@ -209,192 +211,193 @@
 
                             TraktConfigurationPage.loadConfiguration(currentUserId);
                         });
-
-                        return false;
                     });
-
-                    /**
-                     *
-                     *  Secure Hash Algorithm (SHA1)
-                     *  http://www.webtoolkit.info/
-                     *
-                    **/
-
-                    function SHA1(msg) {
-
-                        function rotate_left(n, s) {
-                            var t4 = (n << s) | (n >>> (32 - s));
-                            return t4;
-                        }
-
-                        ;
-
-                        function lsb_hex(val) {
-                            var str = "";
-                            var i;
-                            var vh;
-                            var vl;
-
-                            for (i = 0; i <= 6; i += 2) {
-                                vh = (val >>> (i * 4 + 4)) & 0x0f;
-                                vl = (val >>> (i * 4)) & 0x0f;
-                                str += vh.toString(16) + vl.toString(16);
-                            }
-                            return str;
-                        }
-
-                        ;
-
-                        function cvt_hex(val) {
-                            var str = "";
-                            var i;
-                            var v;
-
-                            for (i = 7; i >= 0; i--) {
-                                v = (val >>> (i * 4)) & 0x0f;
-                                str += v.toString(16);
-                            }
-                            return str;
-                        }
-
-                        ;
-
-
-                        function Utf8Encode(string) {
-                            string = string.replace(/\r\n/g, "\n");
-                            var utftext = "";
-
-                            for (var n = 0; n < string.length; n++) {
-
-                                var c = string.charCodeAt(n);
-
-                                if (c < 128) {
-                                    utftext += String.fromCharCode(c);
-                                } else if ((c > 127) && (c < 2048)) {
-                                    utftext += String.fromCharCode((c >> 6) | 192);
-                                    utftext += String.fromCharCode((c & 63) | 128);
-                                } else {
-                                    utftext += String.fromCharCode((c >> 12) | 224);
-                                    utftext += String.fromCharCode(((c >> 6) & 63) | 128);
-                                    utftext += String.fromCharCode((c & 63) | 128);
-                                }
-
-                            }
-
-                            return utftext;
-                        }
-
-                        ;
-
-                        var blockstart;
-                        var i, j;
-                        var W = new Array(80);
-                        var H0 = 0x67452301;
-                        var H1 = 0xEFCDAB89;
-                        var H2 = 0x98BADCFE;
-                        var H3 = 0x10325476;
-                        var H4 = 0xC3D2E1F0;
-                        var A, B, C, D, E;
-                        var temp;
-
-                        msg = Utf8Encode(msg);
-
-                        var msg_len = msg.length;
-
-                        var word_array = new Array();
-                        for (i = 0; i < msg_len - 3; i += 4) {
-                            j = msg.charCodeAt(i) << 24 | msg.charCodeAt(i + 1) << 16 |
-                                msg.charCodeAt(i + 2) << 8 | msg.charCodeAt(i + 3);
-                            word_array.push(j);
-                        }
-
-                        switch (msg_len % 4) {
-                        case 0:
-                            i = 0x080000000;
-                            break;
-                        case 1:
-                            i = msg.charCodeAt(msg_len - 1) << 24 | 0x0800000;
-                            break;
-                        case 2:
-                            i = msg.charCodeAt(msg_len - 2) << 24 | msg.charCodeAt(msg_len - 1) << 16 | 0x08000;
-                            break;
-                        case 3:
-                            i = msg.charCodeAt(msg_len - 3) << 24 | msg.charCodeAt(msg_len - 2) << 16 | msg.charCodeAt(msg_len - 1) << 8 | 0x80;
-                            break;
-                        }
-
-                        word_array.push(i);
-
-                        while ((word_array.length % 16) != 14) word_array.push(0);
-
-                        word_array.push(msg_len >>> 29);
-                        word_array.push((msg_len << 3) & 0x0ffffffff);
-
-
-                        for (blockstart = 0; blockstart < word_array.length; blockstart += 16) {
-
-                            for (i = 0; i < 16; i++) W[i] = word_array[blockstart + i];
-                            for (i = 16; i <= 79; i++) W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
-
-                            A = H0;
-                            B = H1;
-                            C = H2;
-                            D = H3;
-                            E = H4;
-
-                            for (i = 0; i <= 19; i++) {
-                                temp = (rotate_left(A, 5) + ((B & C) | (~B & D)) + E + W[i] + 0x5A827999) & 0x0ffffffff;
-                                E = D;
-                                D = C;
-                                C = rotate_left(B, 30);
-                                B = A;
-                                A = temp;
-                            }
-
-                            for (i = 20; i <= 39; i++) {
-                                temp = (rotate_left(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1) & 0x0ffffffff;
-                                E = D;
-                                D = C;
-                                C = rotate_left(B, 30);
-                                B = A;
-                                A = temp;
-                            }
-
-                            for (i = 40; i <= 59; i++) {
-                                temp = (rotate_left(A, 5) + ((B & C) | (B & D) | (C & D)) + E + W[i] + 0x8F1BBCDC) & 0x0ffffffff;
-                                E = D;
-                                D = C;
-                                C = rotate_left(B, 30);
-                                B = A;
-                                A = temp;
-                            }
-
-                            for (i = 60; i <= 79; i++) {
-                                temp = (rotate_left(A, 5) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6) & 0x0ffffffff;
-                                E = D;
-                                D = C;
-                                C = rotate_left(B, 30);
-                                B = A;
-                                A = temp;
-                            }
-
-                            H0 = (H0 + A) & 0x0ffffffff;
-                            H1 = (H1 + B) & 0x0ffffffff;
-                            H2 = (H2 + C) & 0x0ffffffff;
-                            H3 = (H3 + D) & 0x0ffffffff;
-                            H4 = (H4 + E) & 0x0ffffffff;
-
-                        }
-
-                        var temp = cvt_hex(H0) + cvt_hex(H1) + cvt_hex(H2) + cvt_hex(H3) + cvt_hex(H4);
-
-                        return temp.toLowerCase();
-
-                    }
                 });
 
-            </script>
+                return false;
+            });
 
-        </div>
-    </body>
+
+            /**
+             *
+             *  Secure Hash Algorithm (SHA1)
+             *  http://www.webtoolkit.info/
+             *
+            **/
+            function SHA1(msg) {
+
+                function rotate_left(n, s) {
+                    var t4 = (n << s) | (n >>> (32 - s));
+                    return t4;
+                }
+
+                ;
+
+                function lsb_hex(val) {
+                    var str = "";
+                    var i;
+                    var vh;
+                    var vl;
+
+                    for (i = 0; i <= 6; i += 2) {
+                        vh = (val >>> (i * 4 + 4)) & 0x0f;
+                        vl = (val >>> (i * 4)) & 0x0f;
+                        str += vh.toString(16) + vl.toString(16);
+                    }
+                    return str;
+                }
+
+                ;
+
+                function cvt_hex(val) {
+                    var str = "";
+                    var i;
+                    var v;
+
+                    for (i = 7; i >= 0; i--) {
+                        v = (val >>> (i * 4)) & 0x0f;
+                        str += v.toString(16);
+                    }
+                    return str;
+                }
+
+                ;
+
+
+                function Utf8Encode(string) {
+                    string = string.replace(/\r\n/g, "\n");
+                    var utftext = "";
+
+                    for (var n = 0; n < string.length; n++) {
+
+                        var c = string.charCodeAt(n);
+
+                        if (c < 128) {
+                            utftext += String.fromCharCode(c);
+                        } else if ((c > 127) && (c < 2048)) {
+                            utftext += String.fromCharCode((c >> 6) | 192);
+                            utftext += String.fromCharCode((c & 63) | 128);
+                        } else {
+                            utftext += String.fromCharCode((c >> 12) | 224);
+                            utftext += String.fromCharCode(((c >> 6) & 63) | 128);
+                            utftext += String.fromCharCode((c & 63) | 128);
+                        }
+
+                    }
+
+                    return utftext;
+                }
+
+                ;
+
+                var blockstart;
+                var i, j;
+                var W = new Array(80);
+                var H0 = 0x67452301;
+                var H1 = 0xEFCDAB89;
+                var H2 = 0x98BADCFE;
+                var H3 = 0x10325476;
+                var H4 = 0xC3D2E1F0;
+                var A, B, C, D, E;
+                var temp;
+
+                msg = Utf8Encode(msg);
+
+                var msg_len = msg.length;
+
+                var word_array = new Array();
+                for (i = 0; i < msg_len - 3; i += 4) {
+                    j = msg.charCodeAt(i) << 24 | msg.charCodeAt(i + 1) << 16 |
+                        msg.charCodeAt(i + 2) << 8 | msg.charCodeAt(i + 3);
+                    word_array.push(j);
+                }
+
+                switch (msg_len % 4) {
+                    case 0:
+                        i = 0x080000000;
+                        break;
+                    case 1:
+                        i = msg.charCodeAt(msg_len - 1) << 24 | 0x0800000;
+                        break;
+                    case 2:
+                        i = msg.charCodeAt(msg_len - 2) << 24 | msg.charCodeAt(msg_len - 1) << 16 | 0x08000;
+                        break;
+                    case 3:
+                        i = msg.charCodeAt(msg_len - 3) << 24 | msg.charCodeAt(msg_len - 2) << 16 | msg.charCodeAt(msg_len - 1) << 8 | 0x80;
+                        break;
+                }
+
+                word_array.push(i);
+
+                while ((word_array.length % 16) != 14) word_array.push(0);
+
+                word_array.push(msg_len >>> 29);
+                word_array.push((msg_len << 3) & 0x0ffffffff);
+
+
+                for (blockstart = 0; blockstart < word_array.length; blockstart += 16) {
+
+                    for (i = 0; i < 16; i++) W[i] = word_array[blockstart + i];
+                    for (i = 16; i <= 79; i++) W[i] = rotate_left(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16], 1);
+
+                    A = H0;
+                    B = H1;
+                    C = H2;
+                    D = H3;
+                    E = H4;
+
+                    for (i = 0; i <= 19; i++) {
+                        temp = (rotate_left(A, 5) + ((B & C) | (~B & D)) + E + W[i] + 0x5A827999) & 0x0ffffffff;
+                        E = D;
+                        D = C;
+                        C = rotate_left(B, 30);
+                        B = A;
+                        A = temp;
+                    }
+
+                    for (i = 20; i <= 39; i++) {
+                        temp = (rotate_left(A, 5) + (B ^ C ^ D) + E + W[i] + 0x6ED9EBA1) & 0x0ffffffff;
+                        E = D;
+                        D = C;
+                        C = rotate_left(B, 30);
+                        B = A;
+                        A = temp;
+                    }
+
+                    for (i = 40; i <= 59; i++) {
+                        temp = (rotate_left(A, 5) + ((B & C) | (B & D) | (C & D)) + E + W[i] + 0x8F1BBCDC) & 0x0ffffffff;
+                        E = D;
+                        D = C;
+                        C = rotate_left(B, 30);
+                        B = A;
+                        A = temp;
+                    }
+
+                    for (i = 60; i <= 79; i++) {
+                        temp = (rotate_left(A, 5) + (B ^ C ^ D) + E + W[i] + 0xCA62C1D6) & 0x0ffffffff;
+                        E = D;
+                        D = C;
+                        C = rotate_left(B, 30);
+                        B = A;
+                        A = temp;
+                    }
+
+                    H0 = (H0 + A) & 0x0ffffffff;
+                    H1 = (H1 + B) & 0x0ffffffff;
+                    H2 = (H2 + C) & 0x0ffffffff;
+                    H3 = (H3 + D) & 0x0ffffffff;
+                    H4 = (H4 + E) & 0x0ffffffff;
+
+                }
+
+                var temp = cvt_hex(H0) + cvt_hex(H1) + cvt_hex(H2) + cvt_hex(H3) + cvt_hex(H4);
+
+                return temp.toLowerCase();
+
+            }
+
+        </script>
+
+    </div>
+</body>
 </html>

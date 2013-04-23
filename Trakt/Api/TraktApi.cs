@@ -10,6 +10,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
 using Trakt.Model;
+using MediaBrowser.Model.Entities;
 
 namespace Trakt.Api
 {
@@ -80,12 +81,9 @@ namespace Trakt.Api
             
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            try
-            {
-                data.Add("imdb_id", movie.ProviderIds["Imdb"]);
-            }
-            catch (Exception)
-            {}
+
+            data.Add("imdb_id", movie.GetProviderId(MetadataProviders.Imdb));
+
             try
             {
                 data.Add("tmdb_id", movie.ProviderIds["Tmdb"]);
