@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -166,8 +167,9 @@ namespace Trakt.Api
         /// </summary>
         /// <param name="movies">The movies to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
-        /// <returns></returns>
-        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser)
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>Task{TraktResponseDataContract}.</returns>
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, CancellationToken cancellationToken)
         {
             var moviesPayload = new List<object>();
 
@@ -192,7 +194,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
-                                                                     System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                                     cancellationToken).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
@@ -204,8 +206,9 @@ namespace Trakt.Api
         /// </summary>
         /// <param name="episodes">The episodes to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
-        /// <returns></returns>
-        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser)
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>Task{TraktResponseDataContract}.</returns>
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, CancellationToken cancellationToken)
         {
             var episodesPayload = new List<object>();
 
@@ -244,7 +247,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
-                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                 cancellationToken).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }

@@ -54,7 +54,7 @@ namespace Trakt.ScheduledTasks
                 var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                if (traktUser == null || libraryRoot == null || traktUser.TraktLocations == null)
+                if (traktUser == null || traktUser.TraktLocations == null)
                 {
                     progPercent += percentPerUser;
                     progress.Report(progPercent);
@@ -63,15 +63,27 @@ namespace Trakt.ScheduledTasks
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
-                var currentShow = "";
+                var currentSeriesId = Guid.Empty;
 
-                var mediaItems =
-                    libraryRoot.RecursiveChildren.Where(i => i.DisplayMediaType == "Episode" || i.DisplayMediaType == "Movie").ToList();
+                var mediaItems = libraryRoot.GetRecursiveChildren(user)
+                    .Where(i => i is Episode || i is Movie)
+                    .OrderBy(i =>
+                    {
+                        var episode = i as Episode;
 
-                if (!mediaItems.Any()) continue;
+                        if (episode != null)
+                        {
+                            return episode.SeriesItemId;
+                        }
+
+                        return i.Id;
+                    })
+                    .ToList();
+
+                if (mediaItems.Count == 0) continue;
 
                 // purely for progress reporting
-                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count();
+                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count;
 
                 foreach (var child in mediaItems)
                 {
@@ -88,7 +100,7 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
                                 movies.Clear();
                             }
                         }
@@ -96,20 +108,15 @@ namespace Trakt.ScheduledTasks
                         {
                             var ep = child as Episode;
 
-                            if (string.IsNullOrEmpty(currentShow)) currentShow = ep.Series.Name;
-
-                            if (currentShow.Equals(ep.Series.Name))
-                            {
-                                episodes.Add(ep);
-                            }
-                            else
+                            if (currentSeriesId != ep.SeriesItemId &&episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
-                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
                                 episodes.Clear();
-
-                                episodes.Add(ep);
                             }
+
+                            currentSeriesId = ep.SeriesItemId;
+                            episodes.Add(ep);
                         }
                     }
 
@@ -120,10 +127,10 @@ namespace Trakt.ScheduledTasks
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
 
                 if (episodes.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
             }
         }
 
