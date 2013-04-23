@@ -139,7 +139,7 @@ namespace Trakt.Api
             var currentUser = _userManager.GetUserById(new Guid(request.UserId));
             var currentItem = currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id == new Guid(request.Id));
 
-            return _traktApi.SendItemRating(currentItem, request.Rating, UserHelper.GetTraktUser(request.UserId));
+            return _traktApi.SendItemRating(currentItem, request.Rating, UserHelper.GetTraktUser(request.UserId)).Result;
         }
 
 
@@ -155,7 +155,7 @@ namespace Trakt.Api
             var currentItem = currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id == new Guid(request.Id));
 
             return _traktApi.SendItemComment(currentItem, request.Comment, request.Spoiler,
-                                             UserHelper.GetTraktUser(request.UserId), request.Review);
+                                             UserHelper.GetTraktUser(request.UserId), request.Review).Result;
         }
 
 
@@ -167,7 +167,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RecommendedMovies request)
         {
-            return _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(request.UserId));
+            return _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(request.UserId)).Result;
         }
 
 
@@ -179,7 +179,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RecommendedShows request)
         {
-            return _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(request.UserId));
+            return _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(request.UserId)).Result;
         }
     }
 }
