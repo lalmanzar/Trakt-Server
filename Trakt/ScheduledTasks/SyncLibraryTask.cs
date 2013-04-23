@@ -54,7 +54,7 @@ namespace Trakt.ScheduledTasks
                 var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                if (traktUser == null || libraryRoot == null || traktUser.TraktLocations == null)
+                if (traktUser == null || traktUser.TraktLocations == null)
                 {
                     progPercent += percentPerUser;
                     progress.Report(progPercent);
@@ -65,13 +65,14 @@ namespace Trakt.ScheduledTasks
                 var episodes = new List<Episode>();
                 var currentShow = "";
 
-                var mediaItems =
-                    libraryRoot.RecursiveChildren.Where(i => i.DisplayMediaType == "Episode" || i.DisplayMediaType == "Movie").ToList();
+                var mediaItems = libraryRoot.GetRecursiveChildren(user)
+                    .Where(i => i is Episode || i is Movie)
+                    .ToList();
 
-                if (!mediaItems.Any()) continue;
+                if (mediaItems.Count == 0) continue;
 
                 // purely for progress reporting
-                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count();
+                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count;
 
                 foreach (var child in mediaItems)
                 {
@@ -88,7 +89,7 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
                                 movies.Clear();
                             }
                         }
@@ -105,7 +106,7 @@ namespace Trakt.ScheduledTasks
                             else
                             {
                                 // We're starting a new show. Finish up with the old one
-                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
                                 episodes.Clear();
 
                                 episodes.Add(ep);
@@ -120,10 +121,10 @@ namespace Trakt.ScheduledTasks
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(movies, traktUser).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
 
                 if (episodes.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser).ConfigureAwait(false);
+                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
             }
         }
 
