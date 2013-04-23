@@ -37,7 +37,7 @@ namespace Trakt.Api
         public string UserId { get; set; }
 
         [ApiMember(Name = "Id", Description = "Item Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
-        public string Id { get; set; }
+        public Guid Id { get; set; }
 
         [ApiMember(Name = "Comment", Description = "Text for the comment", IsRequired = true, DataType = "string", ParameterType = "query", Verb = "POST")]
         public string Comment { get; set; }
@@ -114,7 +114,7 @@ namespace Trakt.Api
     {
         private readonly TraktApi _traktApi;
         private readonly IUserManager _userManager;
-
+        private readonly ILibraryManager _libraryManager;
         
         /// <summary>
         /// 
@@ -151,8 +151,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(CommentItem request)
         {
-            var currentUser = _userManager.GetUserById(new Guid(request.UserId));
-            var currentItem = currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id == new Guid(request.Id));
+            var currentItem = _libraryManager.GetItemById(request.Id);
 
             return _traktApi.SendItemComment(currentItem, request.Comment, request.Spoiler,
                                              UserHelper.GetTraktUser(request.UserId), request.Review).Result;
