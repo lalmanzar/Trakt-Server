@@ -108,20 +108,15 @@ namespace Trakt.ScheduledTasks
                         {
                             var ep = child as Episode;
 
-                            if (currentSeriesId == Guid.Empty) currentSeriesId = ep.SeriesItemId;
-
-                            if (currentSeriesId == ep.SeriesItemId)
-                            {
-                                episodes.Add(ep);
-                            }
-                            else
+                            if (currentSeriesId != ep.SeriesItemId &&episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
                                 await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
                                 episodes.Clear();
-
-                                episodes.Add(ep);
                             }
+
+                            currentSeriesId = ep.SeriesItemId;
+                            episodes.Add(ep);
                         }
                     }
 
