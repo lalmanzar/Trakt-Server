@@ -45,19 +45,38 @@ namespace Trakt.ScheduledTasks
 
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
+            // purely for progress reporting
+            var progPercent = 0.0;
+            var percentPerUser = 100/_userManager.Users.Count();
+
             foreach (var user in _userManager.Users)
             {
-                var libaryRoot = user.RootFolder;
+                var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                if (traktUser == null || libaryRoot == null || traktUser.TraktLocations == null) continue;
+                if (traktUser == null || libraryRoot == null || traktUser.TraktLocations == null)
+                {
+                    progPercent += percentPerUser;
+                    progress.Report(progPercent);
+                    continue;
+                }
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
                 var currentShow = "";
 
-                foreach (var child in libaryRoot.RecursiveChildren)
+                var mediaItems =
+                    libraryRoot.RecursiveChildren.Where(i => i.DisplayMediaType == "Episode" || i.DisplayMediaType == "Movie").ToList();
+
+                if (!mediaItems.Any()) continue;
+
+                // purely for progress reporting
+                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count();
+
+                foreach (var child in mediaItems)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (child.Path == null) continue;
 
                     foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
@@ -93,6 +112,10 @@ namespace Trakt.ScheduledTasks
                             }
                         }
                     }
+
+                    // purely for progress reporting
+                    progPercent += percentPerItem;
+                    progress.Report(progPercent);
                 }
 
                 // send any remaining entries
