@@ -45,21 +45,22 @@ namespace Trakt.ScheduledTasks
 
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
+            var users = _userManager.Users.Where(u =>
+            {
+                var traktUser = UserHelper.GetTraktUser(u);
+
+                return traktUser != null && traktUser.TraktLocations != null && traktUser.TraktLocations.Length > 0;
+
+            }).ToList();
+
             // purely for progress reporting
             var progPercent = 0.0;
-            var percentPerUser = 100/_userManager.Users.Count();
+            var percentPerUser = 100 / users.Count;
 
-            foreach (var user in _userManager.Users)
+            foreach (var user in users)
             {
                 var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
-
-                if (traktUser == null || traktUser.TraktLocations == null)
-                {
-                    progPercent += percentPerUser;
-                    progress.Report(progPercent);
-                    continue;
-                }
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
