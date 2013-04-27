@@ -118,45 +118,34 @@ namespace Trakt.Api
         public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
-            _logger.Info("TRAKT: 1");
+
             data.Add("username", traktUser.UserName);
-            _logger.Info("TRAKT: 2");
             data.Add("password", traktUser.PasswordHash);
             try 
             {
-                _logger.Info("TRAKT: 3");
                 data.Add("imdb_id", episode.ProviderIds["Imdb"]);
             }
             catch(Exception)
-            {
-                _logger.Info("TRAKT: 3b");
-            }
+            {}
             try
             {
-                _logger.Info("TRAKT: 4");
                 data.Add("tvdb_id", episode.ProviderIds["Tvdb"]);
             }
             catch(Exception)
-            {
-                _logger.Info("TRAKT: 4b");
-            }
-            _logger.Info("TRAKT: 5");
+            {}
+
             data.Add("title", episode.Name);
-            _logger.Info("TRAKT: 6");
             data.Add("year", episode.ProductionYear.ToString());
-            _logger.Info("TRAKT: 7");
             data.Add("season", episode.Season.IndexNumber.ToString());
-            _logger.Info("TRAKT: 8");
             data.Add("episode", episode.IndexNumber.ToString());
-            _logger.Info("TRAKT: 9");
             data.Add("duration", ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString());
             Stream response = null;
-            _logger.Info("TRAKT: 10");
+
             if (status == MediaStatus.Watching)
                 response = await _httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
                 response = await _httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, System.Threading.CancellationToken.None).ConfigureAwait(false);
-            _logger.Info("TRAKT: 11");
+
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 

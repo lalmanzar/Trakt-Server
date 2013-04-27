@@ -1,23 +1,15 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
-    <id>MediaBrowser.Server.Core</id>
-    <version>3.0.81</version>
-    <title>Media Browser.Server.Core</title>
+    <id>MediaBrowser.Common</id>
+    <version>3.0.85</version>
+    <title>MediaBrowser.Common</title>
     <authors>Media Browser Team</authors>
     <owners>Media Browser Team</owners>
     <projectUrl>https://github.com/MediaBrowser/MediaBrowser</projectUrl>
     <iconUrl>http://www.mb3admin.com/images/mb3icons1-1.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Contains core components required to build plugins for Media Browser Server.</description>
-    <releaseNotes />
+    <description>Contains common model objects and interfaces used by all Media Browser solutions.</description>
     <copyright>Copyright © Media Browser 2013</copyright>
-    <language />
-    <dependencies>
-      <dependency id="MediaBrowser.Common" version="3.0.81" />
-    </dependencies>
-    <references>
-      <reference file="MediaBrowser.Controller.dll" />
-    </references>
   </metadata>
 </package>
