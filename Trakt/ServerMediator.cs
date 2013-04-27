@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Common.Net;
+﻿using System;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -67,30 +68,42 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackStart(object sender, PlaybackProgressEventArgs e)
         {
-            _logger.Info("TRAKT: Playback Started");
-            // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
-            var traktUser = UserHelper.GetTraktUser(e.User);
-
-            if (traktUser == null) return;
-            // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
-            if (traktUser.TraktLocations == null) return;
-
-            foreach (
-                var location in
-                    traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
-                        location => e.Item is Episode || e.Item is Movie))
+            try
             {
-                var video = e.Item as Video;
+                _logger.Info("TRAKT: Playback Started");
+                // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
+                var traktUser = UserHelper.GetTraktUser(e.User);
 
-                if (video is Movie)
+                if (traktUser == null) return;
+                // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
+                if (traktUser.TraktLocations == null) return;
+
+                foreach (
+                    var location in
+                        traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                            location => e.Item is Episode || e.Item is Movie))
                 {
-                    
-                    await _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).ConfigureAwait(false);
+                    var video = e.Item as Video;
+
+                
+                    if (video is Movie)
+                    {
+
+                        await
+                            _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
+                                ConfigureAwait(false);
+                    }
+                    else if (video is Episode)
+                    {
+                        await
+                            _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
+                                ConfigureAwait(false);
+                    }
                 }
-                else if (video is Episode)
-                {
-                    await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).ConfigureAwait(false);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Trakt: Error sending watching status update", ex, null);
             }
         }
 
@@ -116,34 +129,46 @@ namespace Trakt
         {
             if (e.PlaybackPositionTicks == null) return;
 
-
-            var userData = await _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey()).ConfigureAwait(false);
-
-            if (userData.Played)
+            try
             {
-                var traktUser = UserHelper.GetTraktUser(e.User);
+                var userData = await _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey()).ConfigureAwait(false);
 
-                if (traktUser == null) return;
-
-                // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
-                if (traktUser.TraktLocations == null) return;
-
-                foreach (
-                    var location in 
-                        traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
-                            location => e.Item is Episode || e.Item is Movie))
+                if (userData.Played)
                 {
-                    var video = e.Item as Video;
+                    var traktUser = UserHelper.GetTraktUser(e.User);
 
-                    if (video is Movie)
+                    if (traktUser == null) return;
+
+                    // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
+                    if (traktUser.TraktLocations == null) return;
+
+                    foreach (
+                        var location in 
+                            traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                                location => e.Item is Episode || e.Item is Movie))
                     {
-                        await _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser).ConfigureAwait(false);
-                    }
-                    else if (video is Episode)
-                    {
-                        await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser).ConfigureAwait(false);
+                        var video = e.Item as Video;
+
+                    
+                        if (video is Movie)
+                        {
+                            await
+                                _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser).
+                                    ConfigureAwait(false);
+                        }
+                        else if (video is Episode)
+                        {
+                            await
+                                _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser)
+                                    .ConfigureAwait(false);
+                        }
+                    
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Trakt: Error sending scrobble", ex, null);
             }
         }
 

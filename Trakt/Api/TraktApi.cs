@@ -43,7 +43,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
-                                                                     System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                                     CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
@@ -62,7 +62,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
-                                                                     System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                                     CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<AccountSettingsDataContract>(response);
         }
@@ -123,19 +123,19 @@ namespace Trakt.Api
             data.Add("password", traktUser.PasswordHash);
             try 
             {
-                data.Add("imdb_id", episode.ProviderIds["Imdb"]);
+                data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
             }
             catch(Exception)
             {}
             try
             {
-                data.Add("tvdb_id", episode.ProviderIds["Tvdb"]);
+                data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
             }
             catch(Exception)
             {}
 
-            data.Add("title", episode.Name);
-            data.Add("year", episode.ProductionYear.ToString());
+            data.Add("title", episode.Series.Name);
+            data.Add("year", episode.Series.ProductionYear.ToString());
             data.Add("season", episode.Season.IndexNumber.ToString());
             data.Add("episode", episode.IndexNumber.ToString());
             data.Add("duration", ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString());
@@ -257,15 +257,15 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            try
-            {
-                data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            }
-            catch (Exception)
-            {}
-
+            
             if (item is Movie)
             {
+                try
+                {
+                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.RateMovie;
@@ -276,7 +276,13 @@ namespace Trakt.Api
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
                 try
                 {
-                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                    data.Add("imdb_id", ((Episode)item).Series.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
+                try
+                {
+                    data.Add("tvdb_id", ((Episode)item).Series.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
                 {}
@@ -289,6 +295,12 @@ namespace Trakt.Api
             {
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+                try
+                {
+                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
                 try
                 {
                     data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
@@ -326,26 +338,32 @@ namespace Trakt.Api
 
             data.Add("username", traktUser.UserName);
             data.Add("password", traktUser.PasswordHash);
-            try
-            {
-                data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            }
-            catch (Exception)
-            {}
-
+            
             if (item is Movie)
             {
+                try
+                {
+                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.CommentMovie;
             }
             else if (item is Episode)
             {
+                try
+                {
+                    data.Add("imdb_id", ((Episode)item).Series.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
                 try
                 {
-                    data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+                    data.Add("tvdb_id", ((Episode)item).Series.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
                 {}
@@ -356,6 +374,12 @@ namespace Trakt.Api
             }
             else // It's a Series
             {
+                try
+                {
+                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
+                }
+                catch (Exception)
+                { }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 try
@@ -395,7 +419,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.RecommendationsMovies, data, Plugin.Instance.TraktResourcePool,
-                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                 CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<List<TraktMovieDataContract>>(response);
         }
@@ -414,7 +438,7 @@ namespace Trakt.Api
             Stream response =
                 await
                 _httpClient.Post(TraktUris.RecommendationsShows, data, Plugin.Instance.TraktResourcePool,
-                                                 System.Threading.CancellationToken.None).ConfigureAwait(false);
+                                                 CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<List<TraktShowDataContract>>(response);
         }
