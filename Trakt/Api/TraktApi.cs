@@ -92,8 +92,8 @@ namespace Trakt.Api
             catch (Exception)
             {}
             data.Add("title", movie.Name);
-            data.Add("year", movie.ProductionYear.ToString());
-            data.Add("duration", ((int)((movie.RunTimeTicks / 10000000) / 60)).ToString());
+            data.Add("year", movie.ProductionYear != null ? movie.ProductionYear.ToString() : "");
+            data.Add("duration", movie.RunTimeTicks != null ? ((int)((movie.RunTimeTicks / 10000000) / 60)).ToString() : "");
 
 
             Stream response = null;
@@ -134,11 +134,15 @@ namespace Trakt.Api
             catch(Exception)
             {}
 
+            if (episode.Series == null || episode.Season == null)
+                 return null;
+
             data.Add("title", episode.Series.Name);
-            data.Add("year", episode.Series.ProductionYear.ToString());
-            data.Add("season", episode.Season.IndexNumber.ToString());
-            data.Add("episode", episode.IndexNumber.ToString());
-            data.Add("duration", ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString());
+            data.Add("year", episode.Series.ProductionYear != null ? episode.Series.ProductionYear.ToString() : "");
+            data.Add("season", episode.Season.IndexNumber != null ? episode.Season.IndexNumber.ToString() : "");
+            data.Add("episode", episode.IndexNumber != null ? episode.IndexNumber.ToString() : "");
+            data.Add("duration", episode.RunTimeTicks != null ? ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString() : "");
+
             Stream response = null;
 
             if (status == MediaStatus.Watching)
@@ -160,6 +164,11 @@ namespace Trakt.Api
         /// <returns>Task{TraktResponseDataContract}.</returns>
         public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, CancellationToken cancellationToken)
         {
+            if (movies == null)
+                throw new ArgumentNullException("movies");
+            if (traktUser == null)
+                throw new ArgumentNullException("traktUser");
+
             var moviesPayload = new List<object>();
 
             foreach (Movie m in movies)
@@ -167,7 +176,7 @@ namespace Trakt.Api
                 var movieData = new
                 {
                     title = m.Name,
-                    imdb_id = m.ProviderIds["Imdb"],
+                    imdb_id = m.GetProviderId(MetadataProviders.Imdb),
                     year = m.ProductionYear ?? 0
                 };
 
@@ -199,6 +208,12 @@ namespace Trakt.Api
         /// <returns>Task{TraktResponseDataContract}.</returns>
         public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, CancellationToken cancellationToken)
         {
+            if (episodes == null)
+                throw new ArgumentNullException("episodes");
+
+            if (traktUser == null)
+                throw new ArgumentNullException("traktUser");
+
             var episodesPayload = new List<object>();
 
             foreach (Episode ep in episodes)
@@ -228,6 +243,9 @@ namespace Trakt.Api
             }
             catch (Exception)
             {}
+
+            if (episodes[0].Series == null)
+                return null;
             
             data.Add("title", episodes[0].Series.Name);
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());

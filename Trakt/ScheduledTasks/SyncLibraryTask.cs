@@ -27,6 +27,7 @@ namespace Trakt.ScheduledTasks
         private readonly IJsonSerializer _jsonSerializer;
         private readonly Kernel _kernel;
         private readonly IUserManager _userManager;
+        private readonly ILogger _logger;
         private TraktApi traktApi;
 
         public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
@@ -35,7 +36,8 @@ namespace Trakt.ScheduledTasks
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
-            traktApi = new TraktApi(_httpClient, _jsonSerializer, logger);
+            _logger = logger;
+            traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -101,7 +103,18 @@ namespace Trakt.ScheduledTasks
                             // publish if the list hits a certain size
                             if (movies.Count >= 200)
                             {
-                                await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                                try
+                                {
+                                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                                }
+                                catch (ArgumentNullException argNullEx)
+                                {
+                                    _logger.ErrorException("ArgumentNullException handled sending movies to trakt.tv", argNullEx);
+                                }
+                                catch (Exception e)
+                                {
+                                    _logger.ErrorException("Exception handled sending movies to trakt.tv", e);
+                                }
                                 movies.Clear();
                             }
                         }
@@ -109,10 +122,22 @@ namespace Trakt.ScheduledTasks
                         {
                             var ep = child as Episode;
 
-                            if (currentSeriesId != ep.SeriesItemId &&episodes.Count > 0)
+                            if (currentSeriesId != ep.SeriesItemId && episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
-                                await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                                try
+                                {
+                                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                                }
+                                catch (ArgumentNullException argNullEx)
+                                {
+                                    _logger.ErrorException("ArgumentNullException handled sending episodes to trakt.tv", argNullEx);
+                                }
+                                catch (Exception e)
+                                {
+                                    _logger.ErrorException("Exception handled sending episodes to trakt.tv", e);
+                                }
+                                
                                 episodes.Clear();
                             }
 
@@ -128,10 +153,37 @@ namespace Trakt.ScheduledTasks
 
                 // send any remaining entries
                 if (movies.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                {
+                    try
+                    {
+                        await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ArgumentNullException argNullEx)
+                    {
+                        _logger.ErrorException("ArgumentNullException handled sending movies to trakt.tv", argNullEx);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.ErrorException("Exception handled sending movies to trakt.tv", e);
+                    }
+                    
+                }
 
                 if (episodes.Count > 0)
-                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                {
+                    try
+                    {
+                        await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ArgumentNullException argNullEx)
+                    {
+                        _logger.ErrorException("ArgumentNullException handled sending episodes to trakt.tv", argNullEx);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.ErrorException("Exception handled sending episodes to trakt.tv", e);
+                    }
+                }
             }
         }
 
