@@ -49,11 +49,18 @@ namespace Trakt.ScheduledTasks
         {
             var users = _userManager.Users.Where(u =>
             {
-                var traktUser = UserHelper.GetTraktUser(u);
+                var traktUser = UserHelper.GetTraktUser(u, _logger);
 
                 return traktUser != null && traktUser.TraktLocations != null && traktUser.TraktLocations.Length > 0;
 
             }).ToList();
+
+            // No point going further if we don't have users.
+            if (users.Count == 0)
+            {
+                _logger.Info("TRAKT: No Users returned");
+                return;
+            }
 
             // purely for progress reporting
             var progPercent = 0.0;
@@ -62,7 +69,7 @@ namespace Trakt.ScheduledTasks
             foreach (var user in users)
             {
                 var libraryRoot = user.RootFolder;
-                var traktUser = UserHelper.GetTraktUser(user);
+                var traktUser = UserHelper.GetTraktUser(user, _logger);
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();

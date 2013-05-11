@@ -10,15 +10,15 @@ namespace Trakt
 {
     internal static class UserHelper
     {
-        public static TraktUser GetTraktUser(User user)
+        public static TraktUser GetTraktUser(User user, ILogger logger)
         {
-            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => tUser.LinkedMbUserId == user.Id.ToString()) : null;
+            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => new Guid(tUser.LinkedMbUserId).Equals(user.Id)) : null;
         }
 
         public static TraktUser GetTraktUser(string userId)
         {
             var userGuid = new Guid(userId);
-            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => tUser.LinkedMbUserId == userGuid.ToString()) : null;
+            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => new Guid(tUser.LinkedMbUserId).Equals(userGuid)) : null;
         }
     }
 }
