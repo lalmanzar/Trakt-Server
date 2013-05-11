@@ -49,7 +49,7 @@ namespace Trakt.ScheduledTasks
         {
             var users = _userManager.Users.Where(u =>
             {
-                var traktUser = UserHelper.GetTraktUser(u, _logger);
+                var traktUser = UserHelper.GetTraktUser(u);
 
                 return traktUser != null && traktUser.TraktLocations != null && traktUser.TraktLocations.Length > 0;
 
@@ -69,7 +69,7 @@ namespace Trakt.ScheduledTasks
             foreach (var user in users)
             {
                 var libraryRoot = user.RootFolder;
-                var traktUser = UserHelper.GetTraktUser(user, _logger);
+                var traktUser = UserHelper.GetTraktUser(user);
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
