@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
+using Trakt.Helpers;
 using Trakt.Model;
 using MediaBrowser.Model.Entities;
 
@@ -156,18 +157,20 @@ namespace Trakt.Api
 
 
         /// <summary>
-        /// Add a list of movies to the users trakt.tv library
+        /// Add or remove a list of movies to/from the users trakt.tv library
         /// </summary>
         /// <param name="movies">The movies to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, CancellationToken cancellationToken)
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
         {
             if (movies == null)
                 throw new ArgumentNullException("movies");
             if (traktUser == null)
                 throw new ArgumentNullException("traktUser");
+
+            if (eventType == EventType.Update) return null;
 
             var moviesPayload = new List<object>();
 
@@ -189,10 +192,18 @@ namespace Trakt.Api
             data.Add("password", traktUser.PasswordHash);
             data.Add("movies", _jsonSerializer.SerializeToString(moviesPayload));
 
-            Stream response =
-                await
-                _httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
-                                                                     cancellationToken).ConfigureAwait(false);
+            Stream response = null;
+
+            if (eventType == EventType.Add)
+            {
+                response = await _httpClient.Post(TraktUris.MovieLibrary, data, Plugin.Instance.TraktResourcePool,
+                                                  cancellationToken).ConfigureAwait(false);
+            }
+            else if (eventType == EventType.Remove)
+            {
+                response = await _httpClient.Post(TraktUris.MovieUnLibrary, data, Plugin.Instance.TraktResourcePool,
+                                                  cancellationToken).ConfigureAwait(false);
+            }
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
@@ -200,19 +211,21 @@ namespace Trakt.Api
 
 
         /// <summary>
-        /// Add a list of Episodes to the users trakt.tv library
+        /// Add or remove a list of Episodes to/from the users trakt.tv library
         /// </summary>
         /// <param name="episodes">The episodes to add</param>
         /// <param name="traktUser">The user who's library is being updated</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, CancellationToken cancellationToken)
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes, TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
         {
             if (episodes == null)
                 throw new ArgumentNullException("episodes");
 
             if (traktUser == null)
                 throw new ArgumentNullException("traktUser");
+
+            if (eventType == EventType.Update) return null;
 
             var episodesPayload = new List<object>();
 
@@ -251,10 +264,18 @@ namespace Trakt.Api
             data.Add("year", (episodes[0].Series.ProductionYear ?? 0).ToString());
             data.Add("episodes", _jsonSerializer.SerializeToString(episodesPayload));
 
-            Stream response =
-                await
-                _httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
-                                                 cancellationToken).ConfigureAwait(false);
+            Stream response = null;
+
+            if (eventType == EventType.Add)
+            {
+                response = await _httpClient.Post(TraktUris.ShowEpisodeLibrary, data, Plugin.Instance.TraktResourcePool,
+                                                  cancellationToken).ConfigureAwait(false);
+            }
+            else if (eventType == EventType.Remove)
+            {
+                response = await _httpClient.Post(TraktUris.ShowEpisodeUnLibrary, data, Plugin.Instance.TraktResourcePool,
+                                                  cancellationToken).ConfigureAwait(false);
+            }
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }

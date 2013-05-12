@@ -6,10 +6,12 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Plugins;
+using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
+using Trakt.Helpers;
 
 namespace Trakt
 {
@@ -20,13 +22,14 @@ namespace Trakt
     {
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IHttpClient _httpClient;
+        private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
         private readonly IUserDataRepository _userDataRepository;
+        private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
         private TraktApi _traktApi;
         private TraktUriService _service;
-
-
+        private LibraryManagerEventsHelper _libraryManagerEventsHelper;
 
         /// <summary>
         /// 
@@ -34,17 +37,22 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
+        /// <param name="sessionManager"> </param>
         /// <param name="userDataRepository"></param>
+        /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository, ILogger logger)
+        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogger logger)
         {
             _jsonSerializer = jsonSerializer;
             _httpClient = httpClient;
             _userManager = userManager;
+            _sessionManager = sessionManager;
             _userDataRepository = userDataRepository;
+            _libraryManager = libraryManager;
             _logger = logger;
             _traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager);
+            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
         }
 
 
@@ -54,9 +62,55 @@ namespace Trakt
         /// </summary>
         public void Run()
         {
-            _userManager.PlaybackStart += KernelPlaybackStart;
-            _userManager.PlaybackProgress += KernelPlaybackProgress;
-            _userManager.PlaybackStopped += KernelPlaybackStopped;
+            _sessionManager.PlaybackStart += KernelPlaybackStart;
+            _sessionManager.PlaybackProgress += KernelPlaybackProgress;
+            _sessionManager.PlaybackStopped += KernelPlaybackStopped;
+            _libraryManager.ItemAdded += LibraryManagerItemAdded;
+            _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
+            _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void LibraryManagerItemUpdated(object sender, ItemChangeEventArgs e)
+        {
+            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
+
+            _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Update);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs e)
+        {
+            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
+
+            _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Remove);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void LibraryManagerItemAdded(object sender, ItemChangeEventArgs e)
+        {
+            // Don't do anything if it's not a supported media type
+            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
+            
+            _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Add);
         }
 
 
@@ -182,8 +236,12 @@ namespace Trakt
             _userManager.PlaybackStart -= KernelPlaybackStart;
             _userManager.PlaybackProgress -= KernelPlaybackProgress;
             _userManager.PlaybackStopped -= KernelPlaybackStopped;
+            _libraryManager.ItemAdded -= LibraryManagerItemAdded;
+            _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
+            _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
             _service = null;
             _traktApi = null;
+            _libraryManagerEventsHelper = null;
         }
     }
 }

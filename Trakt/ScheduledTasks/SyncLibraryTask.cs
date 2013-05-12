@@ -13,6 +13,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api;
+using Trakt.Helpers;
 
 namespace Trakt.ScheduledTasks
 {
@@ -112,7 +113,7 @@ namespace Trakt.ScheduledTasks
                             {
                                 try
                                 {
-                                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                                 }
                                 catch (ArgumentNullException argNullEx)
                                 {
@@ -134,7 +135,7 @@ namespace Trakt.ScheduledTasks
                                 // We're starting a new show. Finish up with the old one
                                 try
                                 {
-                                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                                 }
                                 catch (ArgumentNullException argNullEx)
                                 {
@@ -163,7 +164,7 @@ namespace Trakt.ScheduledTasks
                 {
                     try
                     {
-                        await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken).ConfigureAwait(false);
+                        await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                     }
                     catch (ArgumentNullException argNullEx)
                     {
@@ -180,7 +181,7 @@ namespace Trakt.ScheduledTasks
                 {
                     try
                     {
-                        await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken).ConfigureAwait(false);
+                        await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                     }
                     catch (ArgumentNullException argNullEx)
                     {

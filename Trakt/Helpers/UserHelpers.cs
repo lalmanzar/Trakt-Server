@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Cryptography;
 using MediaBrowser.Controller.Entities;
 using Trakt.Model;
 
-namespace Trakt
+namespace Trakt.Helpers
 {
     internal static class UserHelper
     {

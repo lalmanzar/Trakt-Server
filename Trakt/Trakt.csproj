@@ -86,7 +86,8 @@
     <Compile Include="Configuration\TraktConfigurationPage.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="Helpers.cs" />
+    <Compile Include="Helpers\LibraryManagerEventsHelper.cs" />
+    <Compile Include="Helpers\UserHelpers.cs" />
     <Compile Include="Model\TraktUser.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

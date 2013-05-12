@@ -3,6 +3,7 @@ using System.Linq;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Library;
 using ServiceStack.ServiceHost;
+using Trakt.Helpers;
 
 namespace Trakt.Api
 {
