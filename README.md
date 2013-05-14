@@ -7,6 +7,8 @@ Community driven trakt.tv plugin for MediaBrowser 3.
 
 - Report watching status
 - Scrobble Movies/Episodes
+- Upstream syncing of library as a task
+- Live update to collection based on local changes
 
 ## Related Sites ##
 
