@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
@@ -10,6 +9,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
 using Trakt.Api;
+using Trakt.Api.DataContracts;
 using Trakt.Model;
 using Timer = System.Timers.Timer;
 
@@ -48,7 +48,7 @@ namespace Trakt.Helpers
             {
                 _logger.Info("Trakt: Creating queue timer");
                 _queueTimer = new Timer(3000); // fire every 3 seconds
-                _queueTimer.Elapsed += new ElapsedEventHandler(QueueTimerElapsed);
+                _queueTimer.Elapsed += QueueTimerElapsed;
             }
             else if (_queueTimer.Enabled)
             {
@@ -76,6 +76,7 @@ namespace Trakt.Helpers
                     var location in
                         user.TraktLocations.Where(location => item.Path.Contains(location + "\\")))
                 {
+                    _logger.Info("Trakt: Creating library event for " + item.Name);
                     // we have a match, this user is watching the folder the video is in. Add to queue and they
                     // will be processed when the next timer elapsed event fires.
                     var libraryEvent = new LibraryEvent {Item = item, TraktUser = user, EventType = eventType};
@@ -96,6 +97,7 @@ namespace Trakt.Helpers
 
             if (!_queuedEvents.Any())
             {
+                _logger.Info("Trakt: No events... Stopping queue timer");
                 // This may need to go
                 _queueTimer.Enabled = false;
                 return;
@@ -110,7 +112,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieDeletes.Any())
                 {
+                    _logger.Info("Trakt: " + queuedMovieDeletes.Count + " Movie Deletes to Process");
                     ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove);
+                }
+                else
+                {
+                    _logger.Info("Trakt: No Movie Deletes to Process");
                 }
 
                 var queuedMovieAdds = _queuedEvents.Where(ev =>
@@ -120,7 +127,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieAdds.Any())
                 {
+                    _logger.Info("Trakt: " + queuedMovieAdds.Count + " Movie Adds to Process");
                     ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Add);
+                }
+                else
+                {
+                    _logger.Info("Trakt: No Movie Adds to Process");
                 }
 
                 var queuedEpisodeDeletes = _queuedEvents.Where(ev =>
@@ -130,7 +142,12 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeDeletes.Any())
                 {
+                    _logger.Info("Trakt: " + queuedEpisodeDeletes + " Episode Deletes to Process");
                     ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove);
+                }
+                else
+                {
+                    _logger.Info("Trakt: No Episode Deletes to Process");
                 }
 
                 var queuedEpisodeAdds = _queuedEvents.Where(ev =>
@@ -140,12 +157,19 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeAdds.Any())
                 {
+                    _logger.Info("Trakt: " + queuedEpisodeAdds.Count + " Episode Adds to Process");
                     ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add);
+                }
+                else
+                {
+                    _logger.Info("Trakt: No Episode Adds to Process");
                 }
             }
 
             // Everything is processed. Reset the event list.
+            _queueTimer.Enabled = false;
             _queuedEvents = new List<LibraryEvent>();
+
         }
 
         /// <summary>
@@ -174,7 +198,14 @@ namespace Trakt.Helpers
             var episodes = events.Select(libraryEvent => (Episode) libraryEvent.Item).OrderBy(i => i.SeriesItemId).ToList();
 
             // Can't progress further without episodes
-            if (!episodes.Any()) return;
+            if (!episodes.Any())
+            {
+                _logger.Info("Trakt: episodes count is 0");
+
+                return;
+            }
+
+            _logger.Info("Trakt: episodes count - " + episodes.Count);
 
             var payload = new List<Episode>();
             var currentSeriesId = episodes[0].SeriesItemId; 

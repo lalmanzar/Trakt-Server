@@ -67,21 +67,6 @@ namespace Trakt
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
             _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
-            _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
-        }
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void LibraryManagerItemUpdated(object sender, ItemChangeEventArgs e)
-        {
-            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
-
-            _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Update);
         }
 
 
@@ -95,6 +80,7 @@ namespace Trakt
         {
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
 
+            _logger.Info("Trakt: '" + e.Item.Name + "' reports removed from local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Remove);
         }
 
@@ -109,7 +95,8 @@ namespace Trakt
         {
             // Don't do anything if it's not a supported media type
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
-            
+
+            _logger.Info("Trakt: '" + e.Item.Name + "' reports added to local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Add);
         }
 
@@ -233,12 +220,11 @@ namespace Trakt
         /// </summary>
         public void Dispose()
         {
-            _userManager.PlaybackStart -= KernelPlaybackStart;
-            _userManager.PlaybackProgress -= KernelPlaybackProgress;
-            _userManager.PlaybackStopped -= KernelPlaybackStopped;
+            _sessionManager.PlaybackStart -= KernelPlaybackStart;
+            _sessionManager.PlaybackProgress -= KernelPlaybackProgress;
+            _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
             _libraryManager.ItemAdded -= LibraryManagerItemAdded;
             _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
-            _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
             _service = null;
             _traktApi = null;
             _libraryManagerEventsHelper = null;
