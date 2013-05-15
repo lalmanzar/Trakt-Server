@@ -84,7 +84,7 @@
         public const string WatchlistShows = @"http://api.trakt.tv/user/watchlist/shows.json/" + Devkey + @"/{0}";
         public const string WatchlistEpisodes = @"http://api.trakt.tv/user/watchlist/episodes.json/" + Devkey + @"/{0}";
         public const string UserProfile = @"http://api.trakt.tv/user/profile.json/" + Devkey + @"/{0}";
-        public const string Friends = @"http://api.trakt.tv/user/friends.json/" + Devkey + @"/{0}";
+        public const string Friends = @"http://api.trakt.tv/user/network/friends.json/" + Devkey + @"/{0}";
 
         // Activity
         public const string ActivityUser = @"http://api.trakt.tv/activity/user.json/" + Devkey + @"/{0}/{1}/{2}";

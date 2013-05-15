@@ -72,7 +72,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api\DataContracts\AccountSettingsDataContract.cs" />
+    <Compile Include="Api\DataContracts\TraktActivityDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktEpisodeDataContract.cs" />
+    <Compile Include="Api\DataContracts\TraktFriendDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktImagesDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktMovieDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktPeopleDataContract.cs" />

@@ -61,7 +61,7 @@ namespace Trakt.Api
         {
             var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
 
-            Stream response =
+            var response =
                 await
                 _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
                                                                      CancellationToken.None).ConfigureAwait(false);
@@ -72,12 +72,30 @@ namespace Trakt.Api
 
 
         /// <summary>
+        /// Return a list of the users friends
+        /// </summary>
+        /// <param name="traktUser">The user who's friends you want to retrieve</param>
+        /// <returns>A TraktFriendDataContract</returns>
+        public async Task<TraktFriendDataContract> GetUserFriends(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            var response = await _httpClient.Post(string.Format(TraktUris.Friends, traktUser.UserName), data, Plugin.Instance.TraktResourcePool,
+                                                                     CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<TraktFriendDataContract>(response);
+            
+        }
+
+
+
+        /// <summary>
         /// Report to trakt.tv that a movie is being watched, or has been watched.
         /// </summary>
         /// <param name="movie">The movie being watched/scrobbled</param>
         /// <param name="mediaStatus">MediaStatus enum dictating whether item is being watched or scrobbled</param>
         /// <param name="traktUser">The user that watching the current movie</param>
-        /// <returns>A standard TraktResponseDTO</returns>
+        /// <returns>A standard TraktResponse Data Contract</returns>
         public async Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
@@ -116,7 +134,7 @@ namespace Trakt.Api
         /// <param name="episode">The episode being watched</param>
         /// <param name="status">Enum indicating whether an episode is being watched or scrobbled</param>
         /// <param name="traktUser">The user that's watching the episode</param>
-        /// <returns>A standard TraktResponseDTO</returns>
+        /// <returns>A standard TraktResponse Data Contract</returns>
         public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
             Dictionary<string, string> data = new Dictionary<string,string>();
