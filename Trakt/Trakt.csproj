@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Api\DataContracts\AccountSettingsDataContract.cs" />
+    <Compile Include="Api\DataContracts\TraktUserLibraryShowDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktActivityDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktEpisodeDataContract.cs" />
     <Compile Include="Api\DataContracts\TraktFriendDataContract.cs" />
@@ -93,6 +94,7 @@
     <Compile Include="Model\TraktUser.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScheduledTasks\SyncFromTraktTask.cs" />
     <Compile Include="ScheduledTasks\SyncLibraryTask.cs" />
     <Compile Include="ServerMediator.cs" />
   </ItemGroup>

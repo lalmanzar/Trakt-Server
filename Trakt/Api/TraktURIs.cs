@@ -75,6 +75,7 @@
 
         // User
         public const string MoviesAll = @"http://api.trakt.tv/user/library/movies/all.json/" + Devkey + @"/{0}";
+        public const string ShowsCollection = @"http://api.trakt.tv/user/library/shows/collection.json/" + Devkey + @"/{0}";
         public const string ShowsWatched = @"http://api.trakt.tv/user/library/shows/watched.json/" + Devkey + @"/{0}";
         public const string WatchedEpisodes = @"http://api.trakt.tv/user/watched/episodes.json/" + Devkey + @"/{0}";
         public const string WatchedMovies = @"http://api.trakt.tv/user/watched/movies.json/" + Devkey + @"/{0}";

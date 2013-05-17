@@ -500,5 +500,62 @@ namespace Trakt.Api
 
             return _jsonSerializer.DeserializeFromStream<List<TraktShowDataContract>>(response);
         }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<List<TraktMovieDataContract>>  SendGetAllMoviesRequest(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            var response =
+                await
+                _httpClient.Post(string.Format(TraktUris.MoviesAll, traktUser.UserName), data, Plugin.Instance.TraktResourcePool,
+                                                 CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<List<TraktMovieDataContract>>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<List<TraktUserLibraryShowDataContract>> SendGetCollectionShowsRequest(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            var response =
+                await
+                _httpClient.Post(string.Format(TraktUris.ShowsCollection, traktUser.UserName), data, Plugin.Instance.TraktResourcePool,
+                                                 CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<List<TraktUserLibraryShowDataContract>>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<List<TraktUserLibraryShowDataContract>> SendGetWatchedShowsRequest(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
+
+            var response =
+                await
+                _httpClient.Post(string.Format(TraktUris.ShowsWatched, traktUser.UserName), data, Plugin.Instance.TraktResourcePool,
+                                                 CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<List<TraktUserLibraryShowDataContract>>(response);
+        }
     }
 }

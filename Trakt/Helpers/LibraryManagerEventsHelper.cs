@@ -9,7 +9,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Logging;
 using Trakt.Api;
-using Trakt.Api.DataContracts;
 using Trakt.Model;
 using Timer = System.Timers.Timer;
 
