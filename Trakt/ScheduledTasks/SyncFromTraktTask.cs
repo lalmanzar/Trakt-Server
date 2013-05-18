@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
@@ -78,146 +79,188 @@ namespace Trakt.ScheduledTasks
             }
 
             // purely for progress reporting
-            var progPercent = 0.0;
             var percentPerUser = 100 / users.Count;
+            double currentProgress = 0;
+            var numComplete = 0;
 
             foreach (var user in users)
             {
-                var libraryRoot = user.RootFolder;
-                var traktUser = UserHelper.GetTraktUser(user);
-
-                /*
-                 * In order to be as accurate as possible. We need to download the users show collection & the users watched shows.
-                 * It's unfortunate that trakt.tv doesn't explicitly supply a bulk method to determine shows that have not been watched
-                 * like they do for movies.
-                 */
-
-                IEnumerable<TraktMovieDataContract> tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
-                IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection = await _traktApi.SendGetCollectionShowsRequest(traktUser).ConfigureAwait(false);
-                IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
-
-                var mediaItems = libraryRoot.GetRecursiveChildren(user)
-                    .Where(i => i is Episode || i is Movie)
-                    .OrderBy(i =>
-                    {
-                        var episode = i as Episode;
-
-                        return episode != null ? episode.SeriesItemId : i.Id;
-                    })
-                    .ToList();
-
-                if (mediaItems.Count == 0) continue;
-
-                // purely for progress reporting
-                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count;
-
-                foreach (var child in mediaItems)
+                try
                 {
-                    if (child is Movie)
+                    await SyncTraktDataForUser(user, currentProgress, cancellationToken, progress, percentPerUser).ConfigureAwait(false);
+
+                    numComplete++;
+                    currentProgress = percentPerUser * numComplete;
+                    progress.Report(currentProgress);
+                }
+                catch (Exception ex)
+                {
+                    _logger.ErrorException("Error syncing trakt data for user {0}", ex, user.Name);
+                }
+            }
+        }
+
+        private async Task SyncTraktDataForUser(User user, double currentProgress, CancellationToken cancellationToken, IProgress<double> progress, double percentPerUser)
+        {
+            var libraryRoot = user.RootFolder;
+            var traktUser = UserHelper.GetTraktUser(user);
+
+            /*
+             * In order to be as accurate as possible. We need to download the users show collection & the users watched shows.
+             * It's unfortunate that trakt.tv doesn't explicitly supply a bulk method to determine shows that have not been watched
+             * like they do for movies.
+             */
+
+            IEnumerable<TraktMovieDataContract> tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
+            IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection = await _traktApi.SendGetCollectionShowsRequest(traktUser).ConfigureAwait(false);
+            IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+
+            var mediaItems = libraryRoot.GetRecursiveChildren(user)
+                .Where(i =>
+                {
+                    var movie = i as Movie;
+
+                    if (movie != null)
                     {
-                        /* 
-                         * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
-                         * to see if it's in the watched movies list. If it is, mark it watched, otherwise mark it unwatched.
-                         */
-                        var imdbId = child.GetProviderId(MetadataProviders.Imdb);
-                        
-                        if (imdbId == null) continue;
+                        var imdbId = movie.GetProviderId(MetadataProviders.Imdb);
 
-                        var matchedMovie = tMovies.SingleOrDefault(i => i.ImdbId == imdbId);
-
-                        if (matchedMovie == null) continue;
-                        
-                        var userData = await _userDataRepository.GetUserData(user.Id, child.GetUserDataKey()).ConfigureAwait(false);
-
-                        if (matchedMovie.Plays >= 1)
+                        if (string.IsNullOrEmpty(imdbId))
                         {
-                            // set movie as watched
-                            userData.Played = true;
-                            userData.PlayCount = Math.Max(matchedMovie.Plays, userData.PlayCount); // keep the highest play count
-
-                            // Set last played to whichever is most recent, remote or local time...
-                            if (matchedMovie.LastPlayed > 0)
-                            {
-                                DateTime tLastPlayed = matchedMovie.LastPlayed.ConvertEpochToDateTime();
-                                userData.LastPlayedDate = tLastPlayed > userData.LastPlayedDate
-                                                                      ? tLastPlayed
-                                                                      : userData.LastPlayedDate;
-                            }
-                        }
-                        else
-                        {
-                            // set as unwatched
-                            userData.Played = false;
-                            userData.PlayCount = 0;
+                            return false;
                         }
 
-                        await _userDataRepository.SaveUserData(user.Id, child.GetUserDataKey(), userData,
-                                                                     new CancellationToken());
+                        return true;
                     }
-                    else // Can only be an episode
+
+                    var episode = i as Episode;
+
+                    if (episode != null)
                     {
-                        /* 
-                         * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
-                         * to see if it's in the watched shows list. If it is, mark it watched, otherwise mark it unwatched.
-                         */
+                        var tvdbId = episode.GetProviderId(MetadataProviders.Tvdb);
 
-                        var tvdbId = child.GetProviderId(MetadataProviders.Tvdb);
-
-                        if (tvdbId == null) continue;
-
-                        var matchedShow = tShowsCollection.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
-
-                        if (matchedShow == null) continue;
-
-                        var matchedSeason = matchedShow.Seasons.SingleOrDefault(tSeason =>
-                                                                        tSeason.Season == child.ParentIndexNumber);
-
-                        if (matchedSeason == null || child.IndexNumber == null) continue;
-
-                        var matchedEpisode = matchedSeason.Episodes.Contains((int)child.IndexNumber);
-
-                        // if it's not a match then it means trakt doesn't know about the episode, leave the watched state alone and move on
-                        if (!matchedEpisode) continue;
-
-                        // episode is in users libary. Now we need to determine if it's watched
-
-                        var userData =
-                                await
-                                _userDataRepository.GetUserData(user.Id, child.GetUserDataKey()).ConfigureAwait(false);
-
-                        var watchedShowMatch = tShowsWatched.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
-
-                        if (watchedShowMatch != null)
+                        if (string.IsNullOrEmpty(tvdbId))
                         {
-                            var watchedSeasonMatch =
-                                watchedShowMatch.Seasons.SingleOrDefault(
-                                    tSeason => tSeason.Season == child.ParentIndexNumber);
-
-                            if (watchedSeasonMatch != null)
-                            {
-                                var watchedEpisode = watchedSeasonMatch.Episodes.Contains((int) child.IndexNumber);
-
-                                if (watchedEpisode)
-                                {
-                                    userData.Played = true;
-                                    await _userDataRepository.SaveUserData(user.Id, child.GetUserDataKey(), userData,
-                                                                     new CancellationToken());
-                                    continue;
-                                }
-                            }
+                            return false;
                         }
 
+                        return true;
+                    }
+
+                    return false;
+                })
+                .OrderBy(i =>
+                {
+                    var episode = i as Episode;
+
+                    return episode != null ? episode.SeriesItemId : i.Id;
+                })
+                .ToList();
+
+            // purely for progress reporting
+            var percentPerItem = (double)percentPerUser / (double)mediaItems.Count;
+
+            foreach (var movie in mediaItems.OfType<Movie>())
+            {
+                /* 
+                 * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
+                 * to see if it's in the watched movies list. If it is, mark it watched, otherwise mark it unwatched.
+                 */
+                var imdbId = movie.GetProviderId(MetadataProviders.Imdb);
+
+                var matchedMovie = tMovies.FirstOrDefault(i => i.ImdbId == imdbId);
+
+                if (matchedMovie != null)
+                {
+                    var userData = await _userDataRepository.GetUserData(user.Id, movie.GetUserDataKey()).ConfigureAwait(false);
+
+                    if (matchedMovie.Plays >= 1)
+                    {
+                        // set movie as watched
+                        userData.Played = true;
+                        userData.PlayCount = Math.Max(matchedMovie.Plays, userData.PlayCount); // keep the highest play count
+
+                        // Set last played to whichever is most recent, remote or local time...
+                        if (matchedMovie.LastPlayed > 0)
+                        {
+                            var tLastPlayed = matchedMovie.LastPlayed.ConvertEpochToDateTime();
+                            userData.LastPlayedDate = tLastPlayed > userData.LastPlayedDate
+                                                                  ? tLastPlayed
+                                                                  : userData.LastPlayedDate;
+                        }
+                    }
+                    else
+                    {
+                        // set as unwatched
                         userData.Played = false;
                         userData.PlayCount = 0;
-
-                        await _userDataRepository.SaveUserData(user.Id, child.GetUserDataKey(), userData,
-                                                                     new CancellationToken());
+                        userData.LastPlayedDate = null;
                     }
 
-                    // purely for progress reporting
-                    progPercent += percentPerItem;
-                    progress.Report(progPercent);
+                    await _userDataRepository.SaveUserData(user.Id, movie.GetUserDataKey(), userData, cancellationToken);
                 }
+
+                // purely for progress reporting
+                currentProgress += percentPerItem;
+                progress.Report(currentProgress);
+            }
+
+            foreach (var episode in mediaItems.OfType<Episode>())
+            {
+                /* 
+               * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
+               * to see if it's in the watched shows list. If it is, mark it watched, otherwise mark it unwatched.
+               */
+
+                var tvdbId = episode.GetProviderId(MetadataProviders.Tvdb);
+
+                var matchedShow = tShowsCollection.FirstOrDefault(tShow => tShow.TvdbId == tvdbId);
+
+                if (matchedShow != null)
+                {
+                    var matchedSeason = matchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
+
+                    if (matchedSeason != null)
+                    {
+                        // if it's not a match then it means trakt doesn't know about the episode, leave the watched state alone and move on
+                        if (matchedSeason.Episodes.Contains(episode.IndexNumber ?? -1))
+                        {
+                            // episode is in users libary. Now we need to determine if it's watched
+                            var userData = await _userDataRepository.GetUserData(user.Id, episode.GetUserDataKey()).ConfigureAwait(false);
+
+                            var watchedShowMatch = tShowsWatched.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
+
+                            var isWatched = false;
+
+                            if (watchedShowMatch != null)
+                            {
+                                var watchedSeasonMatch = watchedShowMatch.Seasons.FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
+
+                                if (watchedSeasonMatch != null)
+                                {
+                                    if (watchedSeasonMatch.Episodes.Contains(episode.IndexNumber ?? -1))
+                                    {
+                                        userData.Played = true;
+                                        isWatched = true;
+                                    }
+                                }
+                            }
+
+                            if (!isWatched)
+                            {
+                                userData.Played = false;
+                                userData.PlayCount = 0;
+                                userData.LastPlayedDate = null;
+                            }
+
+                            await _userDataRepository.SaveUserData(user.Id, episode.GetUserDataKey(), userData, cancellationToken);
+                        }
+                    }
+                }
+
+                // purely for progress reporting
+                currentProgress += percentPerItem;
+                progress.Report(currentProgress);
+
             }
         }
 
