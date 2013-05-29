@@ -2,9 +2,9 @@
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Serialization;
-using System;
 using System.ComponentModel.Composition;
 using Trakt.Configuration;
+using Trakt.Net;
 
 namespace Trakt
 {
@@ -37,8 +37,6 @@ namespace Trakt
 
 
         public static Plugin Instance { get; private set; }
-
-
         
         public PluginConfiguration PluginConfiguration
         {

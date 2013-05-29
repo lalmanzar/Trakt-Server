@@ -4,7 +4,6 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
@@ -24,21 +23,20 @@ namespace Trakt.ScheduledTasks
     [Export(typeof(IScheduledTask))]
     public class SyncLibraryTask : IScheduledTask
     {
-        private readonly IHttpClient _httpClient;
+        //private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly Kernel _kernel;
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
         private TraktApi traktApi;
 
-        public SyncLibraryTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager)
+        public SyncLibraryTask(Kernel kernel, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
             _kernel = kernel;
             _jsonSerializer = jsonSerializer;
-            _httpClient = httpClient;
             _userManager = userManager;
             _logger = logger;
-            traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
+            traktApi = new TraktApi(_jsonSerializer, _logger);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()

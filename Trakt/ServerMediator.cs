@@ -12,6 +12,7 @@ using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
 using Trakt.Helpers;
+using Trakt.Net;
 
 namespace Trakt
 {
@@ -21,7 +22,6 @@ namespace Trakt
     public class ServerMediator : IServerEntryPoint
     {
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly IHttpClient _httpClient;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
         private readonly IUserDataRepository _userDataRepository;
@@ -30,6 +30,7 @@ namespace Trakt
         private TraktApi _traktApi;
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
+        private HttpClientManager _httpClient;
 
         /// <summary>
         /// 
@@ -41,17 +42,17 @@ namespace Trakt
         /// <param name="userDataRepository"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogger logger)
+        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogger logger)
         {
             _jsonSerializer = jsonSerializer;
-            _httpClient = httpClient;
             _userManager = userManager;
             _sessionManager = sessionManager;
             _userDataRepository = userDataRepository;
             _libraryManager = libraryManager;
             _logger = logger;
 
-            _traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
+            _httpClient = new HttpClientManager(_logger, _jsonSerializer);
+            _traktApi = new TraktApi(_jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
         }
@@ -229,6 +230,7 @@ namespace Trakt
             _service = null;
             _traktApi = null;
             _libraryManagerEventsHelper = null;
+            _httpClient = null;
         }
     }
 }

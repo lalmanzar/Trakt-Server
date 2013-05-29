@@ -4,7 +4,6 @@ using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -29,7 +28,6 @@ namespace Trakt.ScheduledTasks
     [Export(typeof(IScheduledTask))]
     class SyncFromTraktTask : IScheduledTask
     {
-        private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly IUserDataRepository _userDataRepository;
@@ -41,18 +39,16 @@ namespace Trakt.ScheduledTasks
         /// </summary>
         /// <param name="kernel"></param>
         /// <param name="logger"></param>
-        /// <param name="httpClient"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataRepository"> </param>
-        public SyncFromTraktTask(Kernel kernel, ILogger logger, IHttpClient httpClient, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository)
+        public SyncFromTraktTask(Kernel kernel, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository)
         {
             _jsonSerializer = jsonSerializer;
-            _httpClient = httpClient;
             _userManager = userManager;
             _userDataRepository = userDataRepository;
             _logger = logger;
-            _traktApi = new TraktApi(_httpClient, _jsonSerializer, _logger);
+            _traktApi = new TraktApi(_jsonSerializer, _logger);
         }
 
         /// <summary>
