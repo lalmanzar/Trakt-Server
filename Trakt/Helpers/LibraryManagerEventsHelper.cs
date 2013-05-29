@@ -46,7 +46,7 @@ namespace Trakt.Helpers
             if (_queueTimer == null)
             {
                 _logger.Info("Trakt: Creating queue timer");
-                _queueTimer = new Timer(3000); // fire every 3 seconds
+                _queueTimer = new Timer(9000); // fire every 9 seconds
                 _queueTimer.Elapsed += QueueTimerElapsed;
             }
             else if (_queueTimer.Enabled)
@@ -104,8 +104,8 @@ namespace Trakt.Helpers
 
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
             {
-                var queuedMovieDeletes = _queuedEvents.Where(ev => 
-                    ev.TraktUser.LinkedMbUserId == traktUser.LinkedMbUserId && 
+                var queuedMovieDeletes = _queuedEvents.Where(ev =>
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) && 
                     ev.Item is Movie &&
                     ev.EventType == EventType.Remove).ToList();
 
@@ -120,14 +120,14 @@ namespace Trakt.Helpers
                 }
 
                 var queuedMovieAdds = _queuedEvents.Where(ev =>
-                    ev.TraktUser.LinkedMbUserId == traktUser.LinkedMbUserId &&
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
                     ev.Item is Movie &&
                     ev.EventType == EventType.Add).ToList();
 
                 if (queuedMovieAdds.Any())
                 {
                     _logger.Info("Trakt: " + queuedMovieAdds.Count + " Movie Adds to Process");
-                    ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Add);
+                    ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add);
                 }
                 else
                 {
@@ -135,7 +135,7 @@ namespace Trakt.Helpers
                 }
 
                 var queuedEpisodeDeletes = _queuedEvents.Where(ev =>
-                    ev.TraktUser.LinkedMbUserId == traktUser.LinkedMbUserId &&
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
                     ev.Item is Episode &&
                     ev.EventType == EventType.Remove).ToList();
 
@@ -150,7 +150,7 @@ namespace Trakt.Helpers
                 }
 
                 var queuedEpisodeAdds = _queuedEvents.Where(ev =>
-                    ev.TraktUser.LinkedMbUserId == traktUser.LinkedMbUserId &&
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
                     ev.Item is Episode &&
                     ev.EventType == EventType.Add).ToList();
 
@@ -180,7 +180,7 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedMovieEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var movies = events.Select(libraryEvent => (Movie) libraryEvent.Item).ToList();
+            var movies = events.Select(lev => (Movie) lev.Item).ToList();
 
             await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType);
         }
@@ -194,7 +194,7 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var episodes = events.Select(libraryEvent => (Episode) libraryEvent.Item).OrderBy(i => i.SeriesItemId).ToList();
+            var episodes = events.Select(lev => (Episode) lev.Item).OrderBy(i => i.SeriesItemId).ToList();
 
             // Can't progress further without episodes
             if (!episodes.Any())
@@ -203,8 +203,6 @@ namespace Trakt.Helpers
 
                 return;
             }
-
-            _logger.Info("Trakt: episodes count - " + episodes.Count);
 
             var payload = new List<Episode>();
             var currentSeriesId = episodes[0].SeriesItemId; 
