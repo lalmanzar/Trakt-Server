@@ -30,6 +30,11 @@ namespace Trakt.Api
 
         public TraktApi(IJsonSerializer jsonSerializer, ILogger logger)
         {
+
+            if (HttpClientManager.Instance == null)
+            {
+                var httpClient = new HttpClientManager(logger, jsonSerializer);
+            }
             _httpClient = HttpClientManager.Instance;
             _jsonSerializer = jsonSerializer;
             _logger = logger;
@@ -275,9 +280,9 @@ namespace Trakt.Api
                                year = (episodes[0].Series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
                                episodes = episodesPayload
                            };
-            
-            var dataString = _jsonSerializer.SerializeToString(data);
 
+            var dataString = _jsonSerializer.SerializeToString(data);
+            
             Stream response = null;
 
             switch (eventType)

@@ -93,12 +93,30 @@ namespace Trakt.Net
 
             var client = new HttpClient(handler);
 
-            var data = await client.PostAsync(url, postData, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                var data = await client.PostAsync(url, postData, cancellationToken).ConfigureAwait(false);
 
-            if (!data.IsSuccessStatusCode)
-                throw new HttpException("Error");
+                if (!data.IsSuccessStatusCode)
+                    throw new HttpException("Error");
 
-            return await data.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                return await data.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            }
+            catch (OperationCanceledException ex)
+            {
+                throw new OperationCanceledException(ex.Message, ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new HttpRequestException(ex.Message, ex);
+            }
+            finally
+            {
+                if (resourcePool != null)
+                {
+                    resourcePool.Release();
+                }
+            }
         }
     }
 }

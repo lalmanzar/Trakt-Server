@@ -111,6 +111,10 @@ namespace Trakt.ScheduledTasks
             IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection = await _traktApi.SendGetCollectionShowsRequest(traktUser).ConfigureAwait(false);
             IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
 
+            _logger.Info("Trakt: tMovies count = " + tMovies.Count());
+            _logger.Info("Trakt: tShowsCollection count = " + tShowsCollection.Count());
+            _logger.Info("Trakt: tShowsWatched count = " + tShowsWatched.Count());
+
             var mediaItems = libraryRoot.GetRecursiveChildren(user)
                 .Where(i =>
                 {
@@ -130,9 +134,9 @@ namespace Trakt.ScheduledTasks
 
                     var episode = i as Episode;
 
-                    if (episode != null)
+                    if (episode != null && episode.Series != null)
                     {
-                        var tvdbId = episode.GetProviderId(MetadataProviders.Tvdb);
+                        var tvdbId = episode.Series.GetProviderId(MetadataProviders.Tvdb);
 
                         if (string.IsNullOrEmpty(tvdbId))
                         {
@@ -206,8 +210,7 @@ namespace Trakt.ScheduledTasks
                * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
                * to see if it's in the watched shows list. If it is, mark it watched, otherwise mark it unwatched.
                */
-
-                var tvdbId = episode.GetProviderId(MetadataProviders.Tvdb);
+                var tvdbId = episode.Series.GetProviderId(MetadataProviders.Tvdb);
 
                 var matchedShow = tShowsCollection.FirstOrDefault(tShow => tShow.TvdbId == tvdbId);
 
@@ -282,7 +285,7 @@ namespace Trakt.ScheduledTasks
         /// </summary>
         public string Description
         {
-            get { return "Sync's Watched/Unwatched status from Trakt.tv for each MB3 user that has a configured Trakt account"; }
+            get { return "Sync Watched/Unwatched status from Trakt.tv for each MB3 user that has a configured Trakt account"; }
         }
 
         /// <summary>
