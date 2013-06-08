@@ -49,7 +49,7 @@ namespace Trakt
             _libraryManager = libraryManager;
             _logger = logger;
 
-            _httpClient = new HttpClientManager(_logger, _jsonSerializer);
+            _httpClient = new HttpClientManager(_logger);
             _traktApi = new TraktApi(_jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);

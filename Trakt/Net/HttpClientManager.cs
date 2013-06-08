@@ -10,19 +10,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
-using MediaBrowser.Model.Serialization;
 
 namespace Trakt.Net
 {
     public class HttpClientManager
     {
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
 
-        public HttpClientManager(ILogger logger, IJsonSerializer jsonSerializer)
+        public HttpClientManager(ILogger logger)
         {
             _logger = logger;
-            _jsonSerializer = jsonSerializer;
             Instance = this;
         }
 

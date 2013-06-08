@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using System.Threading;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -33,9 +32,9 @@ namespace Trakt.Api
 
             if (HttpClientManager.Instance == null)
             {
-                var httpClient = new HttpClientManager(logger, jsonSerializer);
+                var httpClient = new HttpClientManager(logger);
+                _httpClient = httpClient;
             }
-            _httpClient = HttpClientManager.Instance;
             _jsonSerializer = jsonSerializer;
             _logger = logger;
         }
@@ -60,7 +59,7 @@ namespace Trakt.Api
 
 
         /// <summary>
-        /// 
+        /// Return information about the user, including ratings format
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -105,19 +104,21 @@ namespace Trakt.Api
         /// <returns>A standard TraktResponse Data Contract</returns>
         public async Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser)
         {
-            var data = new Dictionary<string,string>();
-            
-            data.Add("username", traktUser.UserName);
-            data.Add("password", traktUser.PasswordHash);
-
-            data.Add("imdb_id", movie.GetProviderId(MetadataProviders.Imdb));
+            var data = new Dictionary<string,string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash},
+                               {"imdb_id", movie.GetProviderId(MetadataProviders.Imdb)}
+                           };
 
             try
             {
                 data.Add("tmdb_id", movie.ProviderIds["Tmdb"]);
             }
             catch (Exception)
-            {}
+            {
+                _logger.Error("Tmdb Id missing");
+            }
             data.Add("title", movie.Name);
             data.Add("year", movie.ProductionYear != null ? movie.ProductionYear.ToString() : "");
             data.Add("duration", movie.RunTimeTicks != null ? ((int)((movie.RunTimeTicks / 10000000) / 60)).ToString(CultureInfo.InvariantCulture) : "");
@@ -144,22 +145,28 @@ namespace Trakt.Api
         /// <returns>A standard TraktResponse Data Contract</returns>
         public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
-            var data = new Dictionary<string,string>();
+            var data = new Dictionary<string,string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash}
+                           };
 
-            data.Add("username", traktUser.UserName);
-            data.Add("password", traktUser.PasswordHash);
-            try 
+            try
             {
                 data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
             }
-            catch(Exception)
-            {}
+            catch (Exception)
+            {
+                _logger.Error("imdb Id missing");
+            }
             try
             {
                 data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
             }
-            catch(Exception)
-            {}
+            catch (Exception)
+            {
+                _logger.Error("Tvdb Id missing");
+            }
 
             if (episode.Series == null || episode.Season == null)
                  return null;
@@ -198,19 +205,10 @@ namespace Trakt.Api
 
             if (eventType == EventType.Update) return null;
 
-            var moviesPayload = new List<object>();
-
-            foreach (var m in movies)
-            {
-                var movieData = new
-                {
-                    title = m.Name,
-                    imdb_id = m.GetProviderId(MetadataProviders.Imdb),
-                    year = m.ProductionYear ?? 0
-                };
-
-                moviesPayload.Add(movieData);
-            }
+            var moviesPayload = movies.Select(m => new
+                                                       {
+                                                           title = m.Name, imdb_id = m.GetProviderId(MetadataProviders.Imdb), year = m.ProductionYear ?? 0
+                                                       }).Cast<object>().ToList();
 
             var data = new
                            {
@@ -257,18 +255,10 @@ namespace Trakt.Api
 
             if (eventType == EventType.Update) return null;
 
-            var episodesPayload = new List<object>();
-
-            foreach (var ep in episodes)
-            {
-                var episodeData = new
-                {
-                    season = ep.ParentIndexNumber,
-                    episode = ep.IndexNumber
-                };
-
-                episodesPayload.Add(episodeData);
-            }
+            var episodesPayload = episodes.Select(ep => new
+                                                            {
+                                                                season = ep.ParentIndexNumber, episode = ep.IndexNumber
+                                                            }).Cast<object>().ToList();
 
             var data = new
                            {
@@ -311,12 +301,13 @@ namespace Trakt.Api
         /// <returns></returns>
         public async Task<TraktResponseDataContract> SendItemRating(BaseItem item, int rating, TraktUser traktUser)
         {
-            var url = "";
-            var data = new Dictionary<string, string>();
+            string url;
+            var data = new Dictionary<string, string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash}
+                           };
 
-            data.Add("username", traktUser.UserName);
-            data.Add("password", traktUser.PasswordHash);
-            
             if (item is Movie)
             {
                 try
@@ -324,7 +315,9 @@ namespace Trakt.Api
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.RateMovie;
@@ -335,16 +328,20 @@ namespace Trakt.Api
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
                 try
                 {
-                    data.Add("imdb_id", ((Episode)item).Series.ProviderIds["Imdb"]);
+                    data.Add("imdb_id", ((Episode) item).Series.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 try
                 {
-                    data.Add("tvdb_id", ((Episode)item).Series.ProviderIds["Tvdb"]);
+                    data.Add("tvdb_id", ((Episode) item).Series.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
-                {}
+                {
+                    _logger.Error("Tvdb Id missing");
+                }
                 
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
                 data.Add("episode", item.IndexNumber.ToString());
@@ -359,13 +356,17 @@ namespace Trakt.Api
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 try
                 {
                     data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
-                {}
+                {
+                    _logger.Error("Tvdb Id missing");
+                }
                 url = TraktUris.RateShow;
             }
 
@@ -392,12 +393,13 @@ namespace Trakt.Api
         /// <returns></returns>
         public async Task<TraktResponseDataContract> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, bool isReview = false)
         {
-            var url = "";
-            var data = new Dictionary<string, string>();
+            string url;
+            var data = new Dictionary<string, string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash}
+                           };
 
-            data.Add("username", traktUser.UserName);
-            data.Add("password", traktUser.PasswordHash);
-            
             if (item is Movie)
             {
                 try
@@ -405,7 +407,9 @@ namespace Trakt.Api
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.CommentMovie;
@@ -414,18 +418,22 @@ namespace Trakt.Api
             {
                 try
                 {
-                    data.Add("imdb_id", ((Episode)item).Series.ProviderIds["Imdb"]);
+                    data.Add("imdb_id", ((Episode) item).Series.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
                 try
                 {
-                    data.Add("tvdb_id", ((Episode)item).Series.ProviderIds["Tvdb"]);
+                    data.Add("tvdb_id", ((Episode) item).Series.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
-                {}
+                {
+                    _logger.Error("Tvdb Id missing");
+                }
                 
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
                 data.Add("episode", item.IndexNumber.ToString());
@@ -438,7 +446,9 @@ namespace Trakt.Api
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
                 }
                 catch (Exception)
-                { }
+                {
+                    _logger.Error("Imdb Id missing");
+                }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 try
@@ -446,7 +456,9 @@ namespace Trakt.Api
                     data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
                 }
                 catch (Exception)
-                {}
+                {
+                    _logger.Error("Tvdb Id missing");
+                }
                 
                 url = TraktUris.CommentShow;
             }

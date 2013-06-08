@@ -2,14 +2,11 @@
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Serialization;
-using System.ComponentModel.Composition;
 using Trakt.Configuration;
-using Trakt.Net;
 
 namespace Trakt
 {
-    [Export(typeof(IPlugin))]
-    public class Plugin : BasePlugin<PluginConfiguration>, IPlugin
+    public class Plugin : BasePlugin<PluginConfiguration>
     {
         public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(5,5);
 
