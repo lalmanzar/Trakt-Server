@@ -1,5 +1,4 @@
 ﻿using System;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -35,7 +34,6 @@ namespace Trakt
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="httpClient"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="sessionManager"> </param>
@@ -170,6 +168,7 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
         {
+            _logger.Info("TRAKT: Playback Stopped");
             if (e.PlaybackPositionTicks == null) return;
 
             try
