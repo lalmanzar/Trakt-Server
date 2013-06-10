@@ -2,6 +2,7 @@
 using System.Linq;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Logging;
 using ServiceStack.ServiceHost;
 using Trakt.Helpers;
 
@@ -116,16 +117,19 @@ namespace Trakt.Api
         private readonly TraktApi _traktApi;
         private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
-        
+        private readonly ILogger _logger;
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="traktApi"></param>
         /// <param name="userManager"></param>
-        public TraktUriService(TraktApi traktApi, IUserManager userManager)
+        /// <param name="logger"></param>
+        public TraktUriService(TraktApi traktApi, IUserManager userManager, ILogger logger)
         {
             _traktApi = traktApi;
             _userManager = userManager;
+            _logger = logger;
         }
 
 
@@ -137,10 +141,29 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RateItem request)
         {
-            var currentUser = _userManager.GetUserById(new Guid(request.UserId));
-            var currentItem = currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id == new Guid(request.Id));
+            _logger.Info("*** TRAKT *** RateItem request received");
 
-            return _traktApi.SendItemRating(currentItem, request.Rating, UserHelper.GetTraktUser(request.UserId)).Result;
+            var currentUser = _userManager.GetUserById(new Guid(request.UserId));
+
+            if (currentUser == null)
+            {
+                _logger.Info("*** TRAKT *** currentUser is null");
+                return null;
+            }
+            
+
+            var currentItem =
+                    currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id.Equals(new Guid(request.Id)));
+
+            if (currentItem == null)
+            {
+                _logger.Info("*** TRAKT *** currentItem is null");
+                return null;
+            }
+
+            return
+                    _traktApi.SendItemRating(currentItem, request.Rating, UserHelper.GetTraktUser(request.UserId)).Result;
+            
         }
 
 
@@ -152,6 +175,8 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(CommentItem request)
         {
+            _logger.Info("*** TRAKT *** CommentItem request received");
+
             var currentItem = _libraryManager.GetItemById(request.Id);
 
             return _traktApi.SendItemComment(currentItem, request.Comment, request.Spoiler,

@@ -33,8 +33,9 @@ namespace Trakt.Api
             if (HttpClientManager.Instance == null)
             {
                 var httpClient = new HttpClientManager(logger);
-                _httpClient = httpClient;
             }
+
+            _httpClient = HttpClientManager.Instance;
             _jsonSerializer = jsonSerializer;
             _logger = logger;
         }
@@ -371,8 +372,8 @@ namespace Trakt.Api
             }
 
             data.Add("rating", rating.ToString(CultureInfo.InvariantCulture));
-
-            Stream response =
+            
+            var response =
                 await
                 _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
                                                  CancellationToken.None).ConfigureAwait(false);

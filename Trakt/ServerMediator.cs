@@ -51,7 +51,7 @@ namespace Trakt
 
             _httpClient = new HttpClientManager(_logger);
             _traktApi = new TraktApi(_jsonSerializer, _logger);
-            _service = new TraktUriService(_traktApi, _userManager);
+            _service = new TraktUriService(_traktApi, _userManager, _logger);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
         }
 
