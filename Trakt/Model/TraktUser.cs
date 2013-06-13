@@ -11,5 +11,7 @@ namespace Trakt.Model
         public String LinkedMbUserId { get; set; }
 
         public String[] TraktLocations { get; set; }
+
+        public bool UsesAdvancedRating { get; set; }
     }
 }

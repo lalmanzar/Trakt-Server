@@ -70,7 +70,7 @@ namespace Trakt.Api
 
             var response =
                 await
-                _httpClient.Post(TraktUris.AccountTest, data, Plugin.Instance.TraktResourcePool,
+                _httpClient.Post(TraktUris.AccountSettings, data, Plugin.Instance.TraktResourcePool,
                                                                      CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<AccountSettingsDataContract>(response);

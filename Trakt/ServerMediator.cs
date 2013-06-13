@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -11,6 +12,7 @@ using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
 using Trakt.Helpers;
+using Trakt.Model;
 using Trakt.Net;
 
 namespace Trakt
@@ -53,6 +55,9 @@ namespace Trakt
             _traktApi = new TraktApi(_jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager, _logger);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
+
+            // This should probably be elsewhere.
+            UpdateUserRatingFormat();
         }
 
 
@@ -212,6 +217,26 @@ namespace Trakt
             {
                 _logger.ErrorException("Trakt: Error sending scrobble", ex, null);
             }
+        }
+
+
+
+        /// <summary>
+        /// Update each users rating format, simple/advanced, from trakt.tv
+        /// </summary>
+        /// <returns></returns>
+        private async Task UpdateUserRatingFormat()
+        {
+            if (Plugin.Instance.Configuration.TraktUsers == null) return;
+
+            foreach (var tUser in Plugin.Instance.Configuration.TraktUsers)
+            {
+                var account = await _traktApi.GetUserAccount(tUser);
+
+                tUser.UsesAdvancedRating = account.Viewing.Ratings.Mode.ToLower() == "advanced";
+            }
+
+            Plugin.Instance.SaveConfiguration();
         }
 
 
