@@ -82,7 +82,7 @@ namespace Trakt.ScheduledTasks
 
                         if (episode != null)
                         {
-                            return episode.SeriesItemId;
+                            return episode.Series.Id;
                         }
 
                         return i.Id;
@@ -128,7 +128,7 @@ namespace Trakt.ScheduledTasks
                         {
                             var ep = child as Episode;
 
-                            if (currentSeriesId != ep.SeriesItemId && episodes.Count > 0)
+                            if (currentSeriesId != ep.Series.Id && episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
                                 try
@@ -147,7 +147,7 @@ namespace Trakt.ScheduledTasks
                                 episodes.Clear();
                             }
 
-                            currentSeriesId = ep.SeriesItemId;
+                            currentSeriesId = ep.Series.Id;
                             episodes.Add(ep);
                         }
                     }

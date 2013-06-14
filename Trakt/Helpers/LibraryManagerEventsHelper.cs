@@ -194,7 +194,7 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var episodes = events.Select(lev => (Episode) lev.Item).OrderBy(i => i.SeriesItemId).ToList();
+            var episodes = events.Select(lev => (Episode) lev.Item).OrderBy(i => i.Series.Id).ToList();
 
             // Can't progress further without episodes
             if (!episodes.Any())
@@ -205,16 +205,16 @@ namespace Trakt.Helpers
             }
 
             var payload = new List<Episode>();
-            var currentSeriesId = episodes[0].SeriesItemId; 
+            var currentSeriesId = episodes[0].Series.Id; 
 
             foreach (var ep in episodes)
             {
-                if (!currentSeriesId.Equals(ep.SeriesItemId))
+                if (!currentSeriesId.Equals(ep.Series.Id))
                 {
                     // We're starting a new series. Time to send the current one to trakt.tv
                     await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
                     
-                    currentSeriesId = ep.SeriesItemId;
+                    currentSeriesId = ep.Series.Id;
                     payload.Clear();
                 }
 
