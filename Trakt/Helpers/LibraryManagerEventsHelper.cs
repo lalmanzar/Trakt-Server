@@ -7,6 +7,7 @@ using System.Timers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using Trakt.Api;
 using Trakt.Model;
@@ -46,7 +47,7 @@ namespace Trakt.Helpers
             if (_queueTimer == null)
             {
                 _logger.Info("Trakt: Creating queue timer");
-                _queueTimer = new Timer(9000); // fire every 9 seconds
+                _queueTimer = new Timer(20000); // fire every 20 seconds
                 _queueTimer.Elapsed += QueueTimerElapsed;
             }
             else if (_queueTimer.Enabled)
@@ -180,7 +181,9 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedMovieEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var movies = events.Select(lev => (Movie) lev.Item).ToList();
+            var movies = events.Select(lev => (Movie) lev.Item)
+                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Imdb)))
+                .ToList();
 
             await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType);
         }
@@ -194,7 +197,10 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var episodes = events.Select(lev => (Episode) lev.Item).OrderBy(i => i.Series.Id).ToList();
+            var episodes = events.Select(lev => (Episode) lev.Item)
+                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Imdb)))
+                .OrderBy(i => i.Series.Id)
+                .ToList();
 
             // Can't progress further without episodes
             if (!episodes.Any())
