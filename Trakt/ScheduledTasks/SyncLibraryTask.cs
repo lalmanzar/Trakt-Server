@@ -9,6 +9,7 @@ using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api;
@@ -75,7 +76,9 @@ namespace Trakt.ScheduledTasks
                 var currentSeriesId = Guid.Empty;
 
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
-                    .Where(i => i is Episode || i is Movie)
+                    .Where(i => i.Name != null &&
+                        (i is Episode && !string.IsNullOrEmpty(((Episode)i).Series.GetProviderId(MetadataProviders.Tvdb))) || 
+                        (i is Movie && !string.IsNullOrEmpty(i.GetProviderId(MetadataProviders.Imdb))))
                     .OrderBy(i =>
                     {
                         var episode = i as Episode;
