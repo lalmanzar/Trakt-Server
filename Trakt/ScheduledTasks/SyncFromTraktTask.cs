@@ -171,7 +171,7 @@ namespace Trakt.ScheduledTasks
 
                 if (matchedMovie != null)
                 {
-                    var userData = await _userDataRepository.GetUserData(user.Id, movie.GetUserDataKey()).ConfigureAwait(false);
+                    var userData = _userDataRepository.GetUserData(user.Id, movie.GetUserDataKey());
 
                     if (matchedMovie.Plays >= 1)
                     {
@@ -224,7 +224,7 @@ namespace Trakt.ScheduledTasks
                         if (matchedSeason.Episodes.Contains(episode.IndexNumber ?? -1))
                         {
                             // episode is in users libary. Now we need to determine if it's watched
-                            var userData = await _userDataRepository.GetUserData(user.Id, episode.GetUserDataKey()).ConfigureAwait(false);
+                            var userData = _userDataRepository.GetUserData(user.Id, episode.GetUserDataKey());
 
                             var watchedShowMatch = tShowsWatched.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
 

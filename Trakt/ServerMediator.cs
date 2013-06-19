@@ -178,7 +178,7 @@ namespace Trakt
 
             try
             {
-                var userData = await _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey()).ConfigureAwait(false);
+                var userData = _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey());
 
                 if (userData.Played)
                 {
