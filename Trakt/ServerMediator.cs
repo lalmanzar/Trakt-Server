@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -32,6 +33,7 @@ namespace Trakt
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private HttpClientManager _httpClient;
+        private List<ProgressEvent> _progressEvents; 
 
         /// <summary>
         /// 
@@ -55,6 +57,7 @@ namespace Trakt
             _traktApi = new TraktApi(_jsonSerializer, _logger);
             _service = new TraktUriService(_traktApi, _userManager, _logger);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
+            _progressEvents = new List<ProgressEvent>();
 
             // This should probably be elsewhere.
             UpdateUserRatingFormat();
@@ -108,7 +111,7 @@ namespace Trakt
 
 
         /// <summary>
-        /// 
+        /// Let Trakt.tv know the user has started to watch something
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -130,11 +133,9 @@ namespace Trakt
                             location => e.Item is Episode || e.Item is Movie))
                 {
                     var video = e.Item as Video;
-
-                
+                    
                     if (video is Movie)
                     {
-
                         await
                             _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
                                 ConfigureAwait(false);
@@ -145,6 +146,15 @@ namespace Trakt
                             _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
                                 ConfigureAwait(false);
                     }
+
+                    var playEvent = new ProgressEvent
+                                        {
+                                            UserId = e.User.Id,
+                                            ItemId = e.Item.Id,
+                                            LastApiAccess = DateTime.UtcNow
+                                        };
+                    
+                    _progressEvents.Add(playEvent);
                 }
             }
             catch (Exception ex)
@@ -156,18 +166,55 @@ namespace Trakt
 
 
         /// <summary>
+        /// Let trakt.tv know that the user is still actively watching the media.
         /// 
+        /// Event fires based on the interval that the connected client reports playback progress 
+        /// to the server.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
+        private async void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
         {
+            _logger.Debug("TRAKT: Playback Progress");
+
+            var playEvent =
+                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.User.Id) && ev.ItemId.Equals(e.Item.Id));
+
+            if (playEvent == null) return;
+
+            // Only report progress to trakt every 5 minutes
+            if ((DateTime.UtcNow - playEvent.LastApiAccess).TotalMinutes >= 5)
+            {
+                var video = e.Item as Video;
+
+                var traktUser = UserHelper.GetTraktUser(e.User);
+
+                if (traktUser == null) return;
+
+                if (video is Movie)
+                {
+                    await
+                        _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
+                            ConfigureAwait(false);
+                }
+                else if (video is Episode)
+                {
+                    await
+                        _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
+                            ConfigureAwait(false);
+                }
+
+                // Reset the value
+                playEvent.LastApiAccess = DateTime.UtcNow;
+            }
+
         }
 
 
 
         /// <summary>
-        /// 
+        /// Media playback has stopped. Depending on playback progress, let Trakt.tv know the user has
+        /// completed watching the item.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -217,6 +264,13 @@ namespace Trakt
             {
                 _logger.ErrorException("Trakt: Error sending scrobble", ex, null);
             }
+
+            // No longer need to track the item
+            var playEvent =
+                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.User.Id) && ev.ItemId.Equals(e.Item.Id));
+
+            if (playEvent != null)
+                _progressEvents.Remove(playEvent);
         }
 
 
@@ -255,6 +309,20 @@ namespace Trakt
             _traktApi = null;
             _libraryManagerEventsHelper = null;
             _httpClient = null;
+            _progressEvents = null;
+
         }
+    }
+
+
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ProgressEvent
+    {
+        public Guid UserId;
+        public Guid ItemId;
+        public DateTime LastApiAccess;
     }
 }
