@@ -120,42 +120,63 @@ namespace Trakt
             try
             {
                 _logger.Info("TRAKT: Playback Started");
+                _logger.Info("TRAKT: MB3 User: " + e.User.Name);
+
                 // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
                 var traktUser = UserHelper.GetTraktUser(e.User);
 
-                if (traktUser == null) return;
-                // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
-                if (traktUser.TraktLocations == null) return;
-
-                foreach (
-                    var location in
-                        traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
-                            location => e.Item is Episode || e.Item is Movie))
+                if (traktUser == null)
                 {
-                    var video = e.Item as Video;
-                    
-                    if (video is Movie)
-                    {
-                        await
-                            _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
-                                ConfigureAwait(false);
-                    }
-                    else if (video is Episode)
-                    {
-                        await
-                            _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
-                                ConfigureAwait(false);
-                    }
-
-                    var playEvent = new ProgressEvent
-                                        {
-                                            UserId = e.User.Id,
-                                            ItemId = e.Item.Id,
-                                            LastApiAccess = DateTime.UtcNow
-                                        };
-                    
-                    _progressEvents.Add(playEvent);
+                    _logger.Info("TRAKT: Could not match user " + e.User.Id + " with any stored credentials");
+                    return;
                 }
+                // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
+                if (traktUser.TraktLocations == null)
+                {
+                    _logger.Info("TRAKT: User does not have any locations configured to monitor");
+                    return;
+                }
+
+                var locations = traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                    location => e.Item is Episode || e.Item is Movie).ToList();
+
+                if (locations.Any())
+                {
+                    _logger.Info("TRAKT: " + traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
+
+                    foreach (var video in locations.Select(location => e.Item as Video))
+                    {
+                        if (video is Movie)
+                        {
+                            _logger.Info("TRAKT: Send movie status update");
+                            await
+                                _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
+                                          ConfigureAwait(false);
+                        }
+                        else if (video is Episode)
+                        {
+                            _logger.Info("TRAKT: Send episode status update");
+                            await
+                                _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
+                                          ConfigureAwait(false);
+                        }
+
+                        var playEvent = new ProgressEvent
+                                            {
+                                                UserId = e.User.Id,
+                                                ItemId = e.Item.Id,
+                                                LastApiAccess = DateTime.UtcNow
+                                            };
+
+                        _progressEvents.Add(playEvent);
+                    }
+                }
+                else
+                {
+                    _logger.Info("TRAKT: " + traktUser.LinkedMbUserId + " does not appear to be monitoring " + e.Item.Path);
+                }
+
+                
             }
             catch (Exception ex)
             {
