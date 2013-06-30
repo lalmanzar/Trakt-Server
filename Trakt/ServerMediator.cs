@@ -13,7 +13,6 @@ using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
 using Trakt.Helpers;
-using Trakt.Model;
 using Trakt.Net;
 
 namespace Trakt
@@ -120,7 +119,6 @@ namespace Trakt
             try
             {
                 _logger.Info("TRAKT: Playback Started");
-                _logger.Info("TRAKT: MB3 User: " + e.User.Name);
 
                 // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
                 var traktUser = UserHelper.GetTraktUser(e.User);
@@ -137,25 +135,25 @@ namespace Trakt
                     return;
                 }
 
-                var locations = traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                var locations = traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
                     location => e.Item is Episode || e.Item is Movie).ToList();
 
                 if (locations.Any())
                 {
-                    _logger.Info("TRAKT: " + traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
+                    _logger.Debug("TRAKT: " + traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
 
                     foreach (var video in locations.Select(location => e.Item as Video))
                     {
                         if (video is Movie)
                         {
-                            _logger.Info("TRAKT: Send movie status update");
+                            _logger.Debug("TRAKT: Send movie status update");
                             await
                                 _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
                                           ConfigureAwait(false);
                         }
                         else if (video is Episode)
                         {
-                            _logger.Info("TRAKT: Send episode status update");
+                            _logger.Debug("TRAKT: Send episode status update");
                             await
                                 _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
                                           ConfigureAwait(false);
@@ -173,7 +171,7 @@ namespace Trakt
                 }
                 else
                 {
-                    _logger.Info("TRAKT: " + traktUser.LinkedMbUserId + " does not appear to be monitoring " + e.Item.Path);
+                    _logger.Debug("TRAKT: " + traktUser.LinkedMbUserId + " does not appear to be monitoring " + e.Item.Path);
                 }
 
                 
@@ -259,7 +257,7 @@ namespace Trakt
 
                     foreach (
                         var location in 
-                            traktUser.TraktLocations.Where(location => e.Item.Path.Contains(location + "\\")).Where(
+                            traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
                                 location => e.Item is Episode || e.Item is Movie))
                     {
                         var video = e.Item as Video;
