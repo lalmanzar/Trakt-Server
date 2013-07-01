@@ -144,20 +144,28 @@ namespace Trakt
 
                     foreach (var video in locations.Select(location => e.Item as Video))
                     {
-                        if (video is Movie)
+                        try
                         {
-                            _logger.Debug("TRAKT: Send movie status update");
-                            await
-                                _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
-                                          ConfigureAwait(false);
+                            if (video is Movie)
+                            {
+                                _logger.Debug("TRAKT: Send movie status update");
+                                await
+                                    _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
+                                              ConfigureAwait(false);
+                            }
+                            else if (video is Episode)
+                            {
+                                _logger.Debug("TRAKT: Send episode status update");
+                                await
+                                    _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
+                                              ConfigureAwait(false);
+                            }
                         }
-                        else if (video is Episode)
+                        catch (Exception ex)
                         {
-                            _logger.Debug("TRAKT: Send episode status update");
-                            await
-                                _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
-                                          ConfigureAwait(false);
+                            _logger.ErrorException("Exception handled sending status update", ex);
                         }
+                        
 
                         var playEvent = new ProgressEvent
                                             {
@@ -209,20 +217,26 @@ namespace Trakt
                 var traktUser = UserHelper.GetTraktUser(e.User);
 
                 if (traktUser == null) return;
-
-                if (video is Movie)
+                
+                try
                 {
-                    await
-                        _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
-                            ConfigureAwait(false);
+                    if (video is Movie)
+                    {
+                        await
+                            _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
+                                      ConfigureAwait(false);
+                    }
+                    else if (video is Episode)
+                    {
+                        await
+                            _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
+                                      ConfigureAwait(false);
+                    }
                 }
-                else if (video is Episode)
+                catch (Exception ex)
                 {
-                    await
-                        _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
-                            ConfigureAwait(false);
+                    _logger.ErrorException("Exception handled sending status update", ex);
                 }
-
                 // Reset the value
                 playEvent.LastApiAccess = DateTime.UtcNow;
             }
@@ -262,19 +276,27 @@ namespace Trakt
                     {
                         var video = e.Item as Video;
 
+                        try
+                        {
+                            if (video is Movie)
+                            {
+                                await
+                                    _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser).
+                                        ConfigureAwait(false);
+                            }
+                            else if (video is Episode)
+                            {
+                                await
+                                    _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser)
+                                        .ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.ErrorException("Exception handled sending status update", ex);
+                        }
                     
-                        if (video is Movie)
-                        {
-                            await
-                                _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Scrobble, traktUser).
-                                    ConfigureAwait(false);
-                        }
-                        else if (video is Episode)
-                        {
-                            await
-                                _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Scrobble, traktUser)
-                                    .ConfigureAwait(false);
-                        }
+                        
                     
                     }
                 }

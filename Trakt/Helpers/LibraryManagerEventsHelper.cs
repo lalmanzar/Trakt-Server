@@ -142,7 +142,7 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeDeletes.Any())
                 {
-                    _logger.Info("Trakt: " + queuedEpisodeDeletes + " Episode Deletes to Process");
+                    _logger.Info("Trakt: " + queuedEpisodeDeletes.Count + " Episode Deletes to Process");
                     ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove);
                 }
                 else
@@ -184,8 +184,15 @@ namespace Trakt.Helpers
             var movies = events.Select(lev => (Movie) lev.Item)
                 .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Imdb)))
                 .ToList();
-
-            await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType);
+            try
+            {
+                await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Exception handled processing queued movie events", ex);
+            }
+            
         }
 
         /// <summary>
@@ -228,7 +235,16 @@ namespace Trakt.Helpers
             }
 
             if (payload.Any())
-                await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
+            {
+                try
+                {
+                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
+                }
+                catch (Exception ex)
+                {
+                    _logger.ErrorException("Exception handled processing queued episode events", ex);
+                }
+            }
         }
     }
 

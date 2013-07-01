@@ -100,16 +100,28 @@ namespace Trakt.ScheduledTasks
         {
             var libraryRoot = user.RootFolder;
             var traktUser = UserHelper.GetTraktUser(user);
+            
+            IEnumerable<TraktMovieDataContract> tMovies;
+            IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection;
+            IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched;
 
-            /*
-             * In order to be as accurate as possible. We need to download the users show collection & the users watched shows.
-             * It's unfortunate that trakt.tv doesn't explicitly supply a bulk method to determine shows that have not been watched
-             * like they do for movies.
-             */
-
-            IEnumerable<TraktMovieDataContract> tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
-            IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection = await _traktApi.SendGetCollectionShowsRequest(traktUser).ConfigureAwait(false);
-            IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+            try
+            {
+                /*
+                 * In order to be as accurate as possible. We need to download the users show collection & the users watched shows.
+                 * It's unfortunate that trakt.tv doesn't explicitly supply a bulk method to determine shows that have not been watched
+                 * like they do for movies.
+                 */
+                tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
+                tShowsCollection = await _traktApi.SendGetCollectionShowsRequest(traktUser).ConfigureAwait(false);
+                tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Exception handled", ex);
+                return;
+            }
+            
 
             _logger.Info("Trakt: tMovies count = " + tMovies.Count());
             _logger.Info("Trakt: tShowsCollection count = " + tShowsCollection.Count());
