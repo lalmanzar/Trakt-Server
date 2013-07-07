@@ -74,7 +74,7 @@ namespace Trakt.ScheduledTasks
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
                 var currentSeriesId = Guid.Empty;
-
+                
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
                     .Where(i => i.Name != null &&
                         (i is Episode && !string.IsNullOrEmpty(((Episode)i).Series.GetProviderId(MetadataProviders.Tvdb))) || 
