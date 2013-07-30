@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
+using Trakt.Model;
 
 namespace Trakt.Net
 {
@@ -43,6 +44,11 @@ namespace Trakt.Net
 
             var strings = postData.Keys.Select(key => string.Format("{0}={1}", key, postData[key]));
             var postContent = string.Join("&", strings.ToArray());
+            var filteredPostContent = Plugin.Instance.Configuration.TraktUsers.Aggregate(postContent, (current, user) => current.Replace(user.PasswordHash, "[Removed]"));
+
+            _logger.Info("Url: " + url);
+            _logger.Info("Post Data: " + filteredPostContent);
+
             var content = new StringContent(postContent, Encoding.UTF8, "application/x-www-form-urlencoded");
 
             return await PostInternal(url, content, resourcePool, cancellationToken).ConfigureAwait(false);
@@ -61,6 +67,11 @@ namespace Trakt.Net
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException("url");
+
+            var filteredPostContent = Plugin.Instance.Configuration.TraktUsers.Aggregate(postData, (current, user) => current.Replace(user.PasswordHash, "[Removed]"));
+
+            _logger.Info("Url: " + url);
+            _logger.Info("Post Data: " + filteredPostContent);
             
             var content = new StringContent(postData, Encoding.UTF8, "application/x-www-form-urlencoded");
             
@@ -95,7 +106,7 @@ namespace Trakt.Net
                 var data = await client.PostAsync(url, postData, cancellationToken).ConfigureAwait(false);
 
                 if (!data.IsSuccessStatusCode)
-                    throw new HttpException("Error");
+                    throw new HttpException("Non-Success Status Code");
 
                 return await data.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
