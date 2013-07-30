@@ -118,7 +118,7 @@ namespace Trakt.Api
             }
             catch (Exception)
             {
-                _logger.Error("Tmdb Id missing");
+                _logger.Info("Tmdb Id missing");
             }
             data.Add("title", movie.Name);
             data.Add("year", movie.ProductionYear != null ? movie.ProductionYear.ToString() : "");
@@ -158,7 +158,7 @@ namespace Trakt.Api
             }
             catch (Exception)
             {
-                _logger.Error("imdb Id missing");
+                _logger.Info("imdb Id missing");
             }
             try
             {
@@ -166,7 +166,7 @@ namespace Trakt.Api
             }
             catch (Exception)
             {
-                _logger.Error("Tvdb Id missing");
+                _logger.Info("Tvdb Id missing");
             }
 
             if (episode.Series == null || episode.Season == null)
@@ -333,7 +333,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Imdb Id missing");
+                    _logger.Info("Imdb Id missing");
                 }
                 try
                 {
@@ -341,7 +341,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Tvdb Id missing");
+                    _logger.Info("Tvdb Id missing");
                 }
                 
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
@@ -358,7 +358,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Imdb Id missing");
+                    _logger.Info("Imdb Id missing");
                 }
                 try
                 {
@@ -366,7 +366,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Tvdb Id missing");
+                    _logger.Info("Tvdb Id missing");
                 }
                 url = TraktUris.RateShow;
             }
@@ -409,7 +409,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Imdb Id missing");
+                    _logger.Info("Imdb Id missing");
                 }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
@@ -423,7 +423,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Imdb Id missing");
+                    _logger.Info("Imdb Id missing");
                 }
                 data.Add("title", ((Episode)item).Series.Name);
                 data.Add("year", ((Episode)item).Series.ProductionYear != null ? ((Episode)item).Series.ProductionYear.ToString() : "");
@@ -433,7 +433,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Tvdb Id missing");
+                    _logger.Info("Tvdb Id missing");
                 }
                 
                 data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
@@ -448,7 +448,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Imdb Id missing");
+                    _logger.Info("Imdb Id missing");
                 }
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
@@ -458,7 +458,7 @@ namespace Trakt.Api
                 }
                 catch (Exception)
                 {
-                    _logger.Error("Tvdb Id missing");
+                    _logger.Info("Tvdb Id missing");
                 }
                 
                 url = TraktUris.CommentShow;
