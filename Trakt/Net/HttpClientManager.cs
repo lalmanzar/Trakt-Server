@@ -10,7 +10,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Net;
-using Trakt.Model;
 
 namespace Trakt.Net
 {
