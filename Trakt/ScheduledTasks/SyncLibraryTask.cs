@@ -31,12 +31,12 @@ namespace Trakt.ScheduledTasks
         private readonly ILogger _logger;
         private TraktApi traktApi;
 
-        public SyncLibraryTask(Kernel kernel, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager)
+        public SyncLibraryTask(Kernel kernel, ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
             _kernel = kernel;
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
-            _logger = logger;
+            _logger = logger.GetLogger("Trakt");
             traktApi = new TraktApi(_jsonSerializer, _logger);
         }
 
@@ -58,7 +58,7 @@ namespace Trakt.ScheduledTasks
             // No point going further if we don't have users.
             if (users.Count == 0)
             {
-                _logger.Info("TRAKT: No Users returned");
+                _logger.Info("No Users returned");
                 return;
             }
 

@@ -43,14 +43,14 @@ namespace Trakt
         /// <param name="userDataRepository"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogger logger)
+        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogManager logger)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _sessionManager = sessionManager;
             _userDataRepository = userDataRepository;
             _libraryManager = libraryManager;
-            _logger = logger;
+            _logger = logger.GetLogger("Trakt");
 
             _httpClient = new HttpClientManager(_logger);
             _traktApi = new TraktApi(_jsonSerializer, _logger);
@@ -87,7 +87,7 @@ namespace Trakt
         {
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
 
-            _logger.Info("Trakt: '" + e.Item.Name + "' reports removed from local library");
+            _logger.Info(e.Item.Name + "' reports removed from local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Remove);
         }
 
@@ -103,7 +103,7 @@ namespace Trakt
             // Don't do anything if it's not a supported media type
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
 
-            _logger.Info("Trakt: '" + e.Item.Name + "' reports added to local library");
+            _logger.Info(e.Item.Name + "' reports added to local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Add);
         }
 
@@ -118,20 +118,20 @@ namespace Trakt
         {
             try
             {
-                _logger.Info("TRAKT: Playback Started");
+                _logger.Info("Playback Started");
 
                 // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
                 var traktUser = UserHelper.GetTraktUser(e.User);
 
                 if (traktUser == null)
                 {
-                    _logger.Info("TRAKT: Could not match user " + e.User.Id + " with any stored credentials");
+                    _logger.Info("Could not match user " + e.User.Id + " with any stored credentials");
                     return;
                 }
                 // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
                 if (traktUser.TraktLocations == null)
                 {
-                    _logger.Info("TRAKT: User does not have any locations configured to monitor");
+                    _logger.Info("User does not have any locations configured to monitor");
                     return;
                 }
 
@@ -140,7 +140,7 @@ namespace Trakt
 
                 if (locations.Any())
                 {
-                    _logger.Debug("TRAKT: " + traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
+                    _logger.Debug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
 
                     foreach (var video in locations.Select(location => e.Item as Video))
                     {
@@ -148,14 +148,14 @@ namespace Trakt
                         {
                             if (video is Movie)
                             {
-                                _logger.Debug("TRAKT: Send movie status update");
+                                _logger.Debug("Send movie status update");
                                 await
                                     _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser).
                                               ConfigureAwait(false);
                             }
                             else if (video is Episode)
                             {
-                                _logger.Debug("TRAKT: Send episode status update");
+                                _logger.Debug("Send episode status update");
                                 await
                                     _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser).
                                               ConfigureAwait(false);
@@ -179,14 +179,14 @@ namespace Trakt
                 }
                 else
                 {
-                    _logger.Debug("TRAKT: " + traktUser.LinkedMbUserId + " does not appear to be monitoring " + e.Item.Path);
+                    _logger.Debug(traktUser.LinkedMbUserId + " does not appear to be monitoring " + e.Item.Path);
                 }
 
                 
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Trakt: Error sending watching status update", ex, null);
+                _logger.ErrorException("Error sending watching status update", ex, null);
             }
         }
 
@@ -202,7 +202,7 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackProgress(object sender, PlaybackProgressEventArgs e)
         {
-            _logger.Debug("TRAKT: Playback Progress");
+            _logger.Debug("Playback Progress");
 
             var playEvent =
                 _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.User.Id) && ev.ItemId.Equals(e.Item.Id));
@@ -253,7 +253,7 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
         {
-            _logger.Info("TRAKT: Playback Stopped");
+            _logger.Info("Playback Stopped");
             if (e.PlaybackPositionTicks == null) return;
 
             try
@@ -303,7 +303,7 @@ namespace Trakt
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Trakt: Error sending scrobble", ex, null);
+                _logger.ErrorException("Error sending scrobble", ex, null);
             }
 
             // No longer need to track the item

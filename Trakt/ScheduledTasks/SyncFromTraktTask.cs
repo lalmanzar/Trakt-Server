@@ -42,12 +42,12 @@ namespace Trakt.ScheduledTasks
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataRepository"> </param>
-        public SyncFromTraktTask(Kernel kernel, ILogger logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository)
+        public SyncFromTraktTask(Kernel kernel, ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _userDataRepository = userDataRepository;
-            _logger = logger;
+            _logger = logger.GetLogger("Trakt");
             _traktApi = new TraktApi(_jsonSerializer, _logger);
         }
 
@@ -70,7 +70,7 @@ namespace Trakt.ScheduledTasks
             // No point going further if we don't have users.
             if (users.Count == 0)
             {
-                _logger.Info("TRAKT: No Users returned");
+                _logger.Info("No Users returned");
                 return;
             }
 
@@ -123,9 +123,9 @@ namespace Trakt.ScheduledTasks
             }
             
 
-            _logger.Info("Trakt: tMovies count = " + tMovies.Count());
-            _logger.Info("Trakt: tShowsCollection count = " + tShowsCollection.Count());
-            _logger.Info("Trakt: tShowsWatched count = " + tShowsWatched.Count());
+            _logger.Info("tMovies count = " + tMovies.Count());
+            _logger.Info("tShowsCollection count = " + tShowsCollection.Count());
+            _logger.Info("tShowsWatched count = " + tShowsWatched.Count());
 
             var mediaItems = libraryRoot.GetRecursiveChildren(user)
                 .Where(i =>

@@ -46,21 +46,21 @@ namespace Trakt.Helpers
 
             if (_queueTimer == null)
             {
-                _logger.Info("Trakt: Creating queue timer");
+                _logger.Info("Creating queue timer");
                 _queueTimer = new Timer(20000); // fire every 20 seconds
                 _queueTimer.Elapsed += QueueTimerElapsed;
             }
             else if (_queueTimer.Enabled)
             {
                 // If enabled then multiple LibraryManager events are firing. Restart the timer
-                _logger.Info("Trakt: Resetting queue timer");
+                _logger.Info("Resetting queue timer");
                 _queueTimer.Stop();
                 _queueTimer.Start();
             }
 
             if (!_queueTimer.Enabled)
             {
-                _logger.Info("Trakt: Starting queue timer");
+                _logger.Info("Starting queue timer");
                 _queueTimer.Enabled = true;
             }
 
@@ -76,7 +76,7 @@ namespace Trakt.Helpers
                     var location in
                         user.TraktLocations.Where(location => item.Path.Contains(location + "\\")))
                 {
-                    _logger.Info("Trakt: Creating library event for " + item.Name);
+                    _logger.Info("Creating library event for " + item.Name);
                     // we have a match, this user is watching the folder the video is in. Add to queue and they
                     // will be processed when the next timer elapsed event fires.
                     var libraryEvent = new LibraryEvent {Item = item, TraktUser = user, EventType = eventType};
@@ -93,11 +93,11 @@ namespace Trakt.Helpers
         /// <param name="e"></param>
         private void QueueTimerElapsed(object sender, ElapsedEventArgs e)
         {
-            _logger.Info("Trakt: Timer elapsed - Processing queued items");
+            _logger.Info("Timer elapsed - Processing queued items");
 
             if (!_queuedEvents.Any())
             {
-                _logger.Info("Trakt: No events... Stopping queue timer");
+                _logger.Info("No events... Stopping queue timer");
                 // This may need to go
                 _queueTimer.Enabled = false;
                 return;
@@ -112,12 +112,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieDeletes.Any())
                 {
-                    _logger.Info("Trakt: " + queuedMovieDeletes.Count + " Movie Deletes to Process");
+                    _logger.Info(queuedMovieDeletes.Count + " Movie Deletes to Process");
                     ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove);
                 }
                 else
                 {
-                    _logger.Info("Trakt: No Movie Deletes to Process");
+                    _logger.Info("No Movie Deletes to Process");
                 }
 
                 var queuedMovieAdds = _queuedEvents.Where(ev =>
@@ -127,12 +127,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieAdds.Any())
                 {
-                    _logger.Info("Trakt: " + queuedMovieAdds.Count + " Movie Adds to Process");
+                    _logger.Info(queuedMovieAdds.Count + " Movie Adds to Process");
                     ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add);
                 }
                 else
                 {
-                    _logger.Info("Trakt: No Movie Adds to Process");
+                    _logger.Info("No Movie Adds to Process");
                 }
 
                 var queuedEpisodeDeletes = _queuedEvents.Where(ev =>
@@ -142,12 +142,12 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeDeletes.Any())
                 {
-                    _logger.Info("Trakt: " + queuedEpisodeDeletes.Count + " Episode Deletes to Process");
+                    _logger.Info(queuedEpisodeDeletes.Count + " Episode Deletes to Process");
                     ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove);
                 }
                 else
                 {
-                    _logger.Info("Trakt: No Episode Deletes to Process");
+                    _logger.Info("No Episode Deletes to Process");
                 }
 
                 var queuedEpisodeAdds = _queuedEvents.Where(ev =>
@@ -157,12 +157,12 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeAdds.Any())
                 {
-                    _logger.Info("Trakt: " + queuedEpisodeAdds.Count + " Episode Adds to Process");
+                    _logger.Info(queuedEpisodeAdds.Count + " Episode Adds to Process");
                     ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add);
                 }
                 else
                 {
-                    _logger.Info("Trakt: No Episode Adds to Process");
+                    _logger.Info("No Episode Adds to Process");
                 }
             }
 
@@ -212,7 +212,7 @@ namespace Trakt.Helpers
             // Can't progress further without episodes
             if (!episodes.Any())
             {
-                _logger.Info("Trakt: episodes count is 0");
+                _logger.Info("episodes count is 0");
 
                 return;
             }

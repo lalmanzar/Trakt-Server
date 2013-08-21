@@ -141,13 +141,13 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RateItem request)
         {
-            _logger.Info("*** TRAKT *** RateItem request received");
+            _logger.Info("RateItem request received");
 
             var currentUser = _userManager.GetUserById(new Guid(request.UserId));
 
             if (currentUser == null)
             {
-                _logger.Info("*** TRAKT *** currentUser is null");
+                _logger.Info("currentUser is null");
                 return null;
             }
             
@@ -157,7 +157,7 @@ namespace Trakt.Api
 
             if (currentItem == null)
             {
-                _logger.Info("*** TRAKT *** currentItem is null");
+                _logger.Info("currentItem is null");
                 return null;
             }
 
@@ -175,7 +175,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(CommentItem request)
         {
-            _logger.Info("*** TRAKT *** CommentItem request received");
+            _logger.Info("CommentItem request received");
 
             var currentItem = _libraryManager.GetItemById(request.Id);
 
