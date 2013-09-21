@@ -185,6 +185,9 @@ namespace Trakt.Api
             else if (status == MediaStatus.Scrobble)
                 response = await _httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, CancellationToken.None).ConfigureAwait(false);
 
+            var reader = new StreamReader(response);
+            _logger.Info("Stream Response: " + reader.ReadToEnd());
+
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 

@@ -83,12 +83,7 @@ namespace Trakt.ScheduledTasks
                     {
                         var episode = i as Episode;
 
-                        if (episode != null)
-                        {
-                            return episode.Series.Id;
-                        }
-
-                        return i.Id;
+                        return episode != null ? episode.Series.Id : i.Id;
                     })
                     .ToList();
 
