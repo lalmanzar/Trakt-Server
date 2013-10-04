@@ -5,7 +5,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Logging;
@@ -25,7 +24,7 @@ namespace Trakt
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ISessionManager _sessionManager;
         private readonly IUserManager _userManager;
-        private readonly IUserDataRepository _userDataRepository;
+        private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
         private TraktApi _traktApi;
@@ -40,15 +39,15 @@ namespace Trakt
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="sessionManager"> </param>
-        /// <param name="userDataRepository"></param>
+        /// <param name="userDataManager"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataRepository userDataRepository, ILibraryManager libraryManager, ILogManager logger)
+        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _sessionManager = sessionManager;
-            _userDataRepository = userDataRepository;
+            _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = logger.GetLogger("Trakt");
 
@@ -258,7 +257,7 @@ namespace Trakt
 
             try
             {
-                var userData = _userDataRepository.GetUserData(e.User.Id, e.Item.GetUserDataKey());
+                var userData = _userDataManager.GetUserData(e.User.Id, e.Item.GetUserDataKey());
 
                 if (userData.Played)
                 {

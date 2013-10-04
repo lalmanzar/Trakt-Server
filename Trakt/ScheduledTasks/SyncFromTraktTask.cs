@@ -30,7 +30,7 @@ namespace Trakt.ScheduledTasks
     {
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
-        private readonly IUserDataRepository _userDataRepository;
+        private readonly IUserDataManager _userDataManager;
         private readonly ILogger _logger;
         private readonly TraktApi _traktApi;
 
@@ -41,12 +41,12 @@ namespace Trakt.ScheduledTasks
         /// <param name="logger"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
-        /// <param name="userDataRepository"> </param>
-        public SyncFromTraktTask(Kernel kernel, ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataRepository userDataRepository)
+        /// <param name="userDataManager"> </param>
+        public SyncFromTraktTask(Kernel kernel, ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
-            _userDataRepository = userDataRepository;
+            _userDataManager = userDataManager;
             _logger = logger.GetLogger("Trakt");
             _traktApi = new TraktApi(_jsonSerializer, _logger);
         }
@@ -183,7 +183,7 @@ namespace Trakt.ScheduledTasks
 
                 if (matchedMovie != null)
                 {
-                    var userData = _userDataRepository.GetUserData(user.Id, movie.GetUserDataKey());
+                    var userData = _userDataManager.GetUserData(user.Id, movie.GetUserDataKey());
 
                     if (matchedMovie.Plays >= 1)
                     {
@@ -208,7 +208,7 @@ namespace Trakt.ScheduledTasks
                         userData.LastPlayedDate = null;
                     }
 
-                    await _userDataRepository.SaveUserData(user.Id, movie.GetUserDataKey(), userData, cancellationToken);
+                    await _userDataManager.SaveUserData(user.Id, movie.GetUserDataKey(), userData, UserDataSaveReason.TogglePlayed,  cancellationToken);
                 }
 
                 // purely for progress reporting
@@ -236,7 +236,7 @@ namespace Trakt.ScheduledTasks
                         if (matchedSeason.Episodes.Contains(episode.IndexNumber ?? -1))
                         {
                             // episode is in users libary. Now we need to determine if it's watched
-                            var userData = _userDataRepository.GetUserData(user.Id, episode.GetUserDataKey());
+                            var userData = _userDataManager.GetUserData(user.Id, episode.GetUserDataKey());
 
                             var watchedShowMatch = tShowsWatched.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
 
@@ -263,7 +263,7 @@ namespace Trakt.ScheduledTasks
                                 userData.LastPlayedDate = null;
                             }
 
-                            await _userDataRepository.SaveUserData(user.Id, episode.GetUserDataKey(), userData, cancellationToken);
+                            await _userDataManager.SaveUserData(user.Id, episode.GetUserDataKey(), userData, UserDataSaveReason.TogglePlayed, cancellationToken);
                         }
                     }
                 }
