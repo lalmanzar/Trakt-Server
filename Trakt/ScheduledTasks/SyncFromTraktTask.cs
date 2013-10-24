@@ -10,7 +10,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Persistence;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
@@ -208,7 +207,7 @@ namespace Trakt.ScheduledTasks
                         userData.LastPlayedDate = null;
                     }
 
-                    await _userDataManager.SaveUserData(user.Id, movie.GetUserDataKey(), userData, UserDataSaveReason.TogglePlayed,  cancellationToken);
+                    await _userDataManager.SaveUserData(user.Id, movie, userData, UserDataSaveReason.TogglePlayed,  cancellationToken);
                 }
 
                 // purely for progress reporting
@@ -263,7 +262,7 @@ namespace Trakt.ScheduledTasks
                                 userData.LastPlayedDate = null;
                             }
 
-                            await _userDataManager.SaveUserData(user.Id, episode.GetUserDataKey(), userData, UserDataSaveReason.TogglePlayed, cancellationToken);
+                            await _userDataManager.SaveUserData(user.Id, episode, userData, UserDataSaveReason.TogglePlayed, cancellationToken);
                         }
                     }
                 }
