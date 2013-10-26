@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -7,6 +8,7 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System.Linq;
@@ -31,7 +33,8 @@ namespace Trakt
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private HttpClientManager _httpClient;
-        private List<ProgressEvent> _progressEvents; 
+        private List<ProgressEvent> _progressEvents;
+        private UserDataManagerEventsHelper _userDataManagerEventsHelper;
 
         /// <summary>
         /// 
@@ -56,9 +59,37 @@ namespace Trakt
             _service = new TraktUriService(_traktApi, _userManager, _logger);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
             _progressEvents = new List<ProgressEvent>();
+            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
 
             // This should probably be elsewhere.
             UpdateUserRatingFormat();
+
+            _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
+        {
+            // ignore change events for any reason other than manually toggling played.
+            if (e.SaveReason != UserDataSaveReason.TogglePlayed) return;
+
+            // determine if user has trakt credentials
+            var traktUser = UserHelper.GetTraktUser(e.UserId.ToString());
+            
+            // Can't progress
+            if (traktUser == null || e.Item.Path == null || ( !(e.Item is Movie) && !(e.Item is Episode) )) return;
+
+            foreach (var s in traktUser.TraktLocations.Where(s => e.Item.Path.StartsWith(s + Path.DirectorySeparatorChar)))
+            {
+                // We have a user and the item is in a trakt monitored location. 
+                _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(e, traktUser);
+            }
         }
 
 

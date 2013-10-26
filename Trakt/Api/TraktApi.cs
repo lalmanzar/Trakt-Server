@@ -571,5 +571,99 @@ namespace Trakt.Api
 
             return _jsonSerializer.DeserializeFromStream<List<TraktUserLibraryShowDataContract>>(response);
         }
+
+
+
+        /// <summary>
+        /// Send a list of movies to trakt.tv that have been marked watched or unwatched
+        /// </summary>
+        /// <param name="movies">The list of movies to send</param>
+        /// <param name="traktUser">The trakt user profile that is being updated</param>
+        /// <param name="seen">True if movies are being marked seen, false otherwise</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
+        /// <returns></returns>
+        public async Task<TraktResponseDataContract> SendMoviePlaystateUpdates(List<Movie> movies, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        {
+            if (movies == null)
+                throw new ArgumentNullException("movies");
+            if (traktUser == null)
+                throw new ArgumentNullException("traktUser");
+
+            var moviesPayload = movies.Select(m => new
+            {
+                title = m.Name,
+                imdb_id = m.GetProviderId(MetadataProviders.Imdb),
+                year = m.ProductionYear ?? 0
+            }).Cast<object>().ToList();
+
+            var data = new
+            {
+                username = traktUser.UserName,
+                password = traktUser.PasswordHash,
+                movies = moviesPayload
+            };
+
+            var dataString = _jsonSerializer.SerializeToString(data);
+
+            Stream response;
+
+            if (seen)
+                    response = await _httpClient.Post(TraktUris.MovieSeen, dataString, Plugin.Instance.TraktResourcePool,
+                                                      cancellationToken).ConfigureAwait(false);
+            else
+                    response = await _httpClient.Post(TraktUris.MovieUnSeen, dataString, Plugin.Instance.TraktResourcePool,
+                                                      cancellationToken).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
+        /// Send a list of episodes to trakt.tv that have been marked watched or unwatched
+        /// </summary>
+        /// <param name="episodes">The list of episodes to send</param>
+        /// <param name="traktUser">The trakt user profile that is being updated</param>
+        /// <param name="seen">True if episodes are being marked seen, false otherwise</param>
+        /// <param name="cancellationToken">The Cancellation Token</param>
+        /// <returns></returns>
+        public async Task<TraktResponseDataContract> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        {
+            if (episodes == null)
+                throw new ArgumentNullException("episodes");
+
+            if (traktUser == null)
+                throw new ArgumentNullException("traktUser");
+
+            var episodesPayload = episodes.Select(ep => new
+            {
+                season = ep.ParentIndexNumber,
+                episode = ep.IndexNumber
+            }).Cast<object>().ToList();
+
+            var data = new
+            {
+                username = traktUser.UserName,
+                password = traktUser.PasswordHash,
+                imdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Imdb),
+                tvdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Tvdb),
+                title = episodes[0].Series.Name,
+                year = (episodes[0].Series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
+                episodes = episodesPayload
+            };
+
+            var dataString = _jsonSerializer.SerializeToString(data);
+
+            Stream response;
+
+            if (seen)
+                    response = await _httpClient.Post(TraktUris.ShowEpisodeSeen, dataString, Plugin.Instance.TraktResourcePool,
+                                                      cancellationToken).ConfigureAwait(false);
+            else
+                    response = await _httpClient.Post(TraktUris.ShowEpisodeUnSeen, dataString, Plugin.Instance.TraktResourcePool,
+                                                      cancellationToken).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
     }
 }
