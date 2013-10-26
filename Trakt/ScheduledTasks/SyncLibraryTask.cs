@@ -96,7 +96,7 @@ namespace Trakt.ScheduledTasks
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    if (child.Path == null) continue;
+                    if (child.Path == null || child.LocationType == LocationType.Virtual) continue;
 
                     foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
                     {

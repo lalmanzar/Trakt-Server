@@ -83,7 +83,8 @@ namespace Trakt
             var traktUser = UserHelper.GetTraktUser(e.UserId.ToString());
             
             // Can't progress
-            if (traktUser == null || e.Item.Path == null || ( !(e.Item is Movie) && !(e.Item is Episode) )) return;
+            if (traktUser == null || e.Item.Path == null || e.Item.LocationType == LocationType.Virtual || ( !(e.Item is Movie) && !(e.Item is Episode) ))
+                return;
 
             foreach (var s in traktUser.TraktLocations.Where(s => e.Item.Path.StartsWith(s + Path.DirectorySeparatorChar)))
             {
@@ -116,6 +117,7 @@ namespace Trakt
         void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs e)
         {
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
+            if (e.Item.LocationType == LocationType.Virtual) return;
 
             _logger.Info(e.Item.Name + "' reports removed from local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Remove);
@@ -132,6 +134,7 @@ namespace Trakt
         {
             // Don't do anything if it's not a supported media type
             if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
+            if (e.Item.LocationType == LocationType.Virtual) return;
 
             _logger.Info(e.Item.Name + "' reports added to local library");
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Add);
