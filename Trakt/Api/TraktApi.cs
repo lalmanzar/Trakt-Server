@@ -665,5 +665,51 @@ namespace Trakt.Api
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<TraktResponseDataContract> SendCancelWatchingMovie(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash}
+                           };
+
+            var response =
+                await
+                _httpClient.Post(TraktUris.MovieCancelWatching, data, Plugin.Instance.TraktResourcePool,
+                                 CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="traktUser"></param>
+        /// <returns></returns>
+        public async Task<TraktResponseDataContract> SendCancelWatchingShow(TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string>
+                           {
+                               {"username", traktUser.UserName},
+                               {"password", traktUser.PasswordHash}
+                           };
+
+            var response =
+                await
+                _httpClient.Post(TraktUris.ShowCancelWatching, data, Plugin.Instance.TraktResourcePool,
+                                 CancellationToken.None).ConfigureAwait(false);
+
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
     }
 }

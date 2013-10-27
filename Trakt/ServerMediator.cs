@@ -291,23 +291,26 @@ namespace Trakt
 
             try
             {
+                var traktUser = UserHelper.GetTraktUser(e.User);
+
+                if (traktUser == null) return;
+
+                // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
+                if (traktUser.TraktLocations == null) return;
+
                 var userData = _userDataManager.GetUserData(e.User.Id, e.Item.GetUserDataKey());
+                
 
-                if (userData.Played)
+                foreach (
+                    var location in 
+                        traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
+                            location => e.Item is Episode || e.Item is Movie))
                 {
-                    var traktUser = UserHelper.GetTraktUser(e.User);
+                    var video = e.Item as Video;
 
-                    if (traktUser == null) return;
-
-                    // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
-                    if (traktUser.TraktLocations == null) return;
-
-                    foreach (
-                        var location in 
-                            traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
-                                location => e.Item is Episode || e.Item is Movie))
+                    if (userData.Played)
                     {
-                        var video = e.Item as Video;
+                        _logger.Info("Item is played. Check if we need to scrobble");
 
                         try
                         {
@@ -328,11 +331,23 @@ namespace Trakt
                         {
                             _logger.ErrorException("Exception handled sending status update", ex);
                         }
-                    
-                        
-                    
+
+                    }
+                    else
+                    {
+                        _logger.Info("Item progress is under max resume threshold. Tell trakt.tv we are no longer watching");
+
+                        if (video is Movie)
+                        {
+                            await _traktApi.SendCancelWatchingMovie(traktUser);
+                        }
+                        else
+                        {
+                            await _traktApi.SendCancelWatchingShow(traktUser);
+                        }
                     }
                 }
+                
             }
             catch (Exception ex)
             {
