@@ -170,6 +170,9 @@ namespace Trakt.ScheduledTasks
             // purely for progress reporting
             var percentPerItem = (double)percentPerUser / (double)mediaItems.Count;
 
+            // Turn off UserDataManager.UserDataSaved event listener until task completes
+            ServerMediator.Instance.DisableUserDataSavedEventListener();
+
             foreach (var movie in mediaItems.OfType<Movie>())
             {
                 /* 
@@ -272,6 +275,9 @@ namespace Trakt.ScheduledTasks
                 progress.Report(currentProgress);
 
             }
+
+            // Turn on UserDataManager.UserDataSaved event listener since task has completed
+            ServerMediator.Instance.EnableUserDataSavedEventListener();
         }
 
         /// <summary>

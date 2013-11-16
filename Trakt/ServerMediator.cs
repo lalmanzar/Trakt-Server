@@ -36,6 +36,8 @@ namespace Trakt
         private List<ProgressEvent> _progressEvents;
         private UserDataManagerEventsHelper _userDataManagerEventsHelper;
 
+        public static ServerMediator Instance { get; private set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -47,6 +49,7 @@ namespace Trakt
         /// <param name="logger"></param>
         public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger)
         {
+            Instance = this;
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _sessionManager = sessionManager;
@@ -64,7 +67,22 @@ namespace Trakt
             // This should probably be elsewhere.
             UpdateUserRatingFormat();
 
+            EnableUserDataSavedEventListener();
+        }
+
+
+
+        public void EnableUserDataSavedEventListener()
+        {
+            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
+        }
+
+
+
+        public void DisableUserDataSavedEventListener()
+        {
+            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
         }
 
 
