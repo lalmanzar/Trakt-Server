@@ -169,12 +169,12 @@ namespace Trakt.Api
                 _logger.Info("Tvdb Id missing");
             }
 
-            if (episode.Series == null || episode.Season == null)
+            if (episode.Series == null || episode.AiredSeasonNumber == null)
                  return null;
 
             data.Add("title", episode.Series.Name);
             data.Add("year", episode.Series.ProductionYear != null ? episode.Series.ProductionYear.ToString() : "");
-            data.Add("season", episode.Season.IndexNumber != null ? episode.Season.IndexNumber.ToString() : "");
+            data.Add("season", episode.AiredSeasonNumber != null ? episode.AiredSeasonNumber.ToString() : "");
             data.Add("episode", episode.IndexNumber != null ? episode.IndexNumber.ToString() : "");
             data.Add("duration", episode.RunTimeTicks != null ? ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString(CultureInfo.InvariantCulture) : "");
 
@@ -343,8 +343,8 @@ namespace Trakt.Api
                 {
                     _logger.Info("Tvdb Id missing");
                 }
-                
-                data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
+
+                data.Add("season", ((Episode)item).AiredSeasonNumber.ToString());
                 data.Add("episode", item.IndexNumber.ToString());
                 url = TraktUris.RateEpisode;
             }
@@ -435,8 +435,8 @@ namespace Trakt.Api
                 {
                     _logger.Info("Tvdb Id missing");
                 }
-                
-                data.Add("season", ((Episode)item).Season.IndexNumber.ToString());
+
+                data.Add("season", ((Episode)item).AiredSeasonNumber.ToString());
                 data.Add("episode", item.IndexNumber.ToString());
                 url = TraktUris.CommentEpisode;   
             }
