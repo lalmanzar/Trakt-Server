@@ -2,8 +2,9 @@
 using System.Linq;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Net;
 using MediaBrowser.Model.Logging;
-using ServiceStack.ServiceHost;
+using ServiceStack;
 using Trakt.Helpers;
 
 namespace Trakt.Api
