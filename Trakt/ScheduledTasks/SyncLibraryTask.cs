@@ -26,14 +26,12 @@ namespace Trakt.ScheduledTasks
     {
         //private readonly IHttpClient _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly Kernel _kernel;
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
         private TraktApi traktApi;
 
-        public SyncLibraryTask(Kernel kernel, ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager)
+        public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager)
         {
-            _kernel = kernel;
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _logger = logger.GetLogger("Trakt");
