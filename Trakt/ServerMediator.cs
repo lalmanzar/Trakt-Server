@@ -97,17 +97,22 @@ namespace Trakt
             // ignore change events for any reason other than manually toggling played.
             if (e.SaveReason != UserDataSaveReason.TogglePlayed) return;
 
-            // determine if user has trakt credentials
-            var traktUser = UserHelper.GetTraktUser(e.UserId.ToString());
-            
-            // Can't progress
-            if (traktUser == null || e.Item.Path == null || e.Item.LocationType == LocationType.Virtual || ( !(e.Item is Movie) && !(e.Item is Episode) ))
-                return;
+            var baseItem = e.Item as BaseItem;
 
-            foreach (var s in traktUser.TraktLocations.Where(s => e.Item.Path.StartsWith(s + Path.DirectorySeparatorChar)))
+            if (baseItem != null)
             {
-                // We have a user and the item is in a trakt monitored location. 
-                _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(e, traktUser);
+                // determine if user has trakt credentials
+                var traktUser = UserHelper.GetTraktUser(e.UserId.ToString());
+
+                // Can't progress
+                if (traktUser == null || baseItem.Path == null || baseItem.LocationType == LocationType.Virtual || (!(baseItem is Movie) && !(baseItem is Episode)))
+                    return;
+
+                foreach (var s in traktUser.TraktLocations.Where(s => baseItem.Path.StartsWith(s + Path.DirectorySeparatorChar)))
+                {
+                    // We have a user and the item is in a trakt monitored location. 
+                    _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(e, traktUser);
+                }
             }
         }
 
