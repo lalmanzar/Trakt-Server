@@ -172,12 +172,12 @@ namespace Trakt.Helpers
 
                 if (queuedShowDeletes.Any())
                 {
-                    _logger.Info(queuedMovieDeletes.Count + " Movie Deletes to Process");
+                    _logger.Info(queuedMovieDeletes.Count + " Series Deletes to Process");
                     ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove);
                 }
                 else
                 {
-                    _logger.Info("No Movie Deletes to Process");
+                    _logger.Info("No Series Deletes to Process");
                 }
             }
 
@@ -200,7 +200,7 @@ namespace Trakt.Helpers
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Exception handled processing queued movie events", ex);
+                _logger.ErrorException("Exception handled processing queued series events", ex);
             }
         }
 
