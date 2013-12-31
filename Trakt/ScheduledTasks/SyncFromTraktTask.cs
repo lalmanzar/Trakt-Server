@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,7 +22,6 @@ namespace Trakt.ScheduledTasks
     /// Task that will Sync each users trakt.tv profile with their local library. This task will only include 
     /// watched states.
     /// </summary>
-    [Export(typeof(IScheduledTask))]
     class SyncFromTraktTask : IScheduledTask
     {
         private readonly IJsonSerializer _jsonSerializer;

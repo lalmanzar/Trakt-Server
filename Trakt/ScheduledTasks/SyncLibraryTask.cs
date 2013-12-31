@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.ScheduledTasks;
-using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
@@ -21,7 +19,6 @@ namespace Trakt.ScheduledTasks
     /// Task that will Sync each users local library with their respective trakt.tv profiles. This task will only include 
     /// titles, watched states will be synced in other tasks.
     /// </summary>
-    [Export(typeof(IScheduledTask))]
     public class SyncLibraryTask : IScheduledTask
     {
         //private readonly IHttpClient _httpClient;

@@ -1,7 +1,5 @@
 ﻿using MediaBrowser.Common.Plugins;
 using MediaBrowser.Controller.Plugins;
-using System;
-using System.ComponentModel.Composition;
 using System.IO;
 
 namespace Trakt.Configuration

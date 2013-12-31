@@ -294,6 +294,52 @@ namespace Trakt.Api
 
 
         /// <summary>
+        /// Add or remove a Show(Series) to/from the users trakt.tv library
+        /// </summary>
+        /// <param name="show">The show to remove</param>
+        /// <param name="traktUser">The user who's library is being updated</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="eventType"></param>
+        /// <returns>Task{TraktResponseDataContract}.</returns>
+        public async Task<TraktResponseDataContract> SendLibraryUpdateAsync(Series show, TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
+        {
+            if (show == null)
+                throw new ArgumentNullException("show");
+            if (traktUser == null)
+                throw new ArgumentNullException("traktUser");
+
+            if (eventType == EventType.Update) return null;
+
+            var data = new
+            {
+                username = traktUser.UserName,
+                password = traktUser.PasswordHash,
+                tvdb_id = show.GetProviderId(MetadataProviders.Tvdb),
+                title = show.Name,
+                year = show.ProductionYear
+            };
+
+            var dataString = _jsonSerializer.SerializeToString(data);
+
+            Stream response = null;
+
+            switch (eventType)
+            {
+                case EventType.Add:
+                    
+                    break;
+                case EventType.Remove:
+                    response = await _httpClient.Post(TraktUris.ShowUnLibrary, dataString, Plugin.Instance.TraktResourcePool,
+                                                      cancellationToken).ConfigureAwait(false);
+                    break;
+            }
+
+            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+        }
+
+
+
+        /// <summary>
         /// Rate an item
         /// </summary>
         /// <param name="item"></param>

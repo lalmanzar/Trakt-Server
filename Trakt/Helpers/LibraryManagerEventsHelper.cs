@@ -164,12 +164,44 @@ namespace Trakt.Helpers
                 {
                     _logger.Info("No Episode Adds to Process");
                 }
+
+                var queuedShowDeletes = _queuedEvents.Where(ev =>
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
+                    ev.Item is Series &&
+                    ev.EventType == EventType.Remove).ToList();
+
+                if (queuedShowDeletes.Any())
+                {
+                    _logger.Info(queuedMovieDeletes.Count + " Movie Deletes to Process");
+                    ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove);
+                }
+                else
+                {
+                    _logger.Info("No Movie Deletes to Process");
+                }
             }
 
             // Everything is processed. Reset the event list.
             _queueTimer.Enabled = false;
             _queuedEvents = new List<LibraryEvent>();
 
+        }
+
+        private async Task ProcessQueuedShowEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
+        {
+            var shows = events.Select(lev => (Series)lev.Item)
+                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Tvdb)))
+                .ToList();
+            try
+            {
+                // Should probably not be awaiting this, but it's unlikely a user will be deleting more than one or two shows at a time
+                foreach (var show in shows)
+                    await _traktApi.SendLibraryUpdateAsync(show, traktUser, CancellationToken.None, eventType);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Exception handled processing queued movie events", ex);
+            }
         }
 
         /// <summary>
