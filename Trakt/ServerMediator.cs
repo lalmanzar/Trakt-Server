@@ -307,11 +307,8 @@ namespace Trakt
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void KernelPlaybackStopped(object sender, PlaybackProgressEventArgs e)
+        private async void KernelPlaybackStopped(object sender, PlaybackStopEventArgs e)
         {
-            _logger.Info("Playback Stopped");
-            if (e.PlaybackPositionTicks == null) return;
-
             try
             {
                 var traktUser = UserHelper.GetTraktUser(e.User);
@@ -321,9 +318,6 @@ namespace Trakt
                 // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
                 if (traktUser.TraktLocations == null) return;
 
-                var userData = _userDataManager.GetUserData(e.User.Id, e.Item.GetUserDataKey());
-                
-
                 foreach (
                     var location in 
                         traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
@@ -331,9 +325,9 @@ namespace Trakt
                 {
                     var video = e.Item as Video;
 
-                    if (userData.Played)
+                    if (e.PlayedToCompletion)
                     {
-                        _logger.Info("Item is played. Check if we need to scrobble");
+                        _logger.Info("Item is played. Scrobble");
 
                         try
                         {
@@ -358,7 +352,7 @@ namespace Trakt
                     }
                     else
                     {
-                        _logger.Info("Item progress is under max resume threshold. Tell trakt.tv we are no longer watching");
+                        _logger.Info("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
 
                         if (video is Movie)
                         {
