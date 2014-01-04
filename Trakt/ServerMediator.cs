@@ -177,11 +177,11 @@ namespace Trakt
                 _logger.Info("Playback Started");
 
                 // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
-                var traktUser = UserHelper.GetTraktUser(e.User);
+                var traktUser = UserHelper.GetTraktUser(e.Users.First());
 
                 if (traktUser == null)
                 {
-                    _logger.Info("Could not match user " + e.User.Id + " with any stored credentials");
+                    _logger.Info("Could not match user " + e.Users.First().Id + " with any stored credentials");
                     return;
                 }
                 // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
@@ -225,7 +225,7 @@ namespace Trakt
 
                         var playEvent = new ProgressEvent
                                             {
-                                                UserId = e.User.Id,
+                                                UserId = e.Users.First().Id,
                                                 ItemId = e.Item.Id,
                                                 LastApiAccess = DateTime.UtcNow
                                             };
@@ -261,7 +261,7 @@ namespace Trakt
             _logger.Debug("Playback Progress");
 
             var playEvent =
-                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.User.Id) && ev.ItemId.Equals(e.Item.Id));
+                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.Users.First().Id) && ev.ItemId.Equals(e.Item.Id));
 
             if (playEvent == null) return;
 
@@ -270,7 +270,7 @@ namespace Trakt
             {
                 var video = e.Item as Video;
 
-                var traktUser = UserHelper.GetTraktUser(e.User);
+                var traktUser = UserHelper.GetTraktUser(e.Users.First());
 
                 if (traktUser == null) return;
                 
@@ -311,7 +311,7 @@ namespace Trakt
         {
             try
             {
-                var traktUser = UserHelper.GetTraktUser(e.User);
+                var traktUser = UserHelper.GetTraktUser(e.Users.First());
 
                 if (traktUser == null) return;
 
@@ -373,7 +373,7 @@ namespace Trakt
 
             // No longer need to track the item
             var playEvent =
-                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.User.Id) && ev.ItemId.Equals(e.Item.Id));
+                _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.Users.First().Id) && ev.ItemId.Equals(e.Item.Id));
 
             if (playEvent != null)
                 _progressEvents.Remove(playEvent);
