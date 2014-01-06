@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -38,13 +39,13 @@ namespace Trakt.ScheduledTasks
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataManager"> </param>
-        public SyncFromTraktTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager)
+        public SyncFromTraktTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _userDataManager = userDataManager;
             _logger = logger.GetLogger("Trakt");
-            _traktApi = new TraktApi(_jsonSerializer, _logger);
+            _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
         }
 
         /// <summary>

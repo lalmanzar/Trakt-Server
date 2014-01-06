@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -14,7 +15,6 @@ using MediaBrowser.Model.Serialization;
 using System.Linq;
 using Trakt.Api;
 using Trakt.Helpers;
-using Trakt.Net;
 
 namespace Trakt
 {
@@ -32,7 +32,6 @@ namespace Trakt
         private TraktApi _traktApi;
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
-        private HttpClientManager _httpClient;
         private List<ProgressEvent> _progressEvents;
         private UserDataManagerEventsHelper _userDataManagerEventsHelper;
 
@@ -47,7 +46,7 @@ namespace Trakt
         /// <param name="userDataManager"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger)
+        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient)
         {
             Instance = this;
             _jsonSerializer = jsonSerializer;
@@ -57,8 +56,7 @@ namespace Trakt
             _libraryManager = libraryManager;
             _logger = logger.GetLogger("Trakt");
 
-            _httpClient = new HttpClientManager(_logger);
-            _traktApi = new TraktApi(_jsonSerializer, _logger);
+            _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
             _service = new TraktUriService(_traktApi, _userManager, _logger);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
             _progressEvents = new List<ProgressEvent>();
@@ -414,7 +412,6 @@ namespace Trakt
             _service = null;
             _traktApi = null;
             _libraryManagerEventsHelper = null;
-            _httpClient = null;
             _progressEvents = null;
 
         }

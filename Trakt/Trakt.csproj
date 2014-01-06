@@ -87,7 +87,6 @@
     <Compile Include="Helpers\UserDataManagerEventsHelper.cs" />
     <Compile Include="Helpers\UserHelpers.cs" />
     <Compile Include="Model\TraktUser.cs" />
-    <Compile Include="Net\HttpClientManager.cs" />
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScheduledTasks\SyncFromTraktTask.cs" />
