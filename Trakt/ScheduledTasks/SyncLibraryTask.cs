@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Common.IO;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller.Entities.Movies;
@@ -26,13 +27,15 @@ namespace Trakt.ScheduledTasks
         private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
         private TraktApi traktApi;
-
-        public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IHttpClient httpClient)
+        
+        public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IHttpClient httpClient, IFileSystem fileSystem)
         {
             _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _logger = logger.GetLogger("Trakt");
+            _fileSystem = fileSystem;
             traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
         }
 
@@ -94,7 +97,7 @@ namespace Trakt.ScheduledTasks
 
                     if (child.Path == null || child.LocationType == LocationType.Virtual) continue;
 
-                    foreach (var s in traktUser.TraktLocations.Where(s => child.Path.StartsWith(s + "\\")))
+                    foreach (var s in traktUser.TraktLocations.Where(s => _fileSystem.ContainsSubPath(s, child.Path)))
                     {
                         if (child is Movie)
                         {

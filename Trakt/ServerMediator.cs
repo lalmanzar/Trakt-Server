@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using MediaBrowser.Common.IO;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -29,6 +30,7 @@ namespace Trakt
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
+        private readonly IFileSystem _fileSystem;
         private TraktApi _traktApi;
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
@@ -46,7 +48,10 @@ namespace Trakt
         /// <param name="userDataManager"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient)
+        /// <param name="httpClient"></param>
+        /// <param name="fileSystem"></param>
+        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager,
+            ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient, IFileSystem fileSystem)
         {
             Instance = this;
             _jsonSerializer = jsonSerializer;
@@ -55,10 +60,11 @@ namespace Trakt
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = logger.GetLogger("Trakt");
+            _fileSystem = fileSystem;
 
             _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
             _service = new TraktUriService(_traktApi, _userManager, _logger);
-            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
+            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _fileSystem, _traktApi);
             _progressEvents = new List<ProgressEvent>();
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
 
@@ -189,8 +195,9 @@ namespace Trakt
                     return;
                 }
 
-                var locations = traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
-                    location => e.Item is Episode || e.Item is Movie).ToList();
+                var locations = traktUser.TraktLocations.Where(location => _fileSystem.ContainsSubPath(location, e.Item.Path))
+                    .Where(location => e.Item is Episode || e.Item is Movie)
+                    .ToList();
 
                 if (locations.Any())
                 {
@@ -318,8 +325,8 @@ namespace Trakt
 
                 foreach (
                     var location in 
-                        traktUser.TraktLocations.Where(location => e.Item.Path.ToLower().Contains(location.ToLower() + "\\")).Where(
-                            location => e.Item is Episode || e.Item is Movie))
+                        traktUser.TraktLocations.Where(location => _fileSystem.ContainsSubPath(location, e.Item.Path))
+                        .Where(location => e.Item is Episode || e.Item is Movie))
                 {
                     var video = e.Item as Video;
 

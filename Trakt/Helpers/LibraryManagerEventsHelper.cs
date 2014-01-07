@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using MediaBrowser.Common.IO;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -20,6 +21,7 @@ namespace Trakt.Helpers
         private List<LibraryEvent> _queuedEvents;
         private Timer _queueTimer;
         private readonly ILogger _logger ;
+        private readonly IFileSystem _fileSystem;
         private readonly TraktApi _traktApi;
  
         /// <summary>
@@ -27,10 +29,11 @@ namespace Trakt.Helpers
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi)
+        public LibraryManagerEventsHelper(ILogger logger, IFileSystem fileSystem, TraktApi traktApi)
         {
             _queuedEvents = new List<LibraryEvent>();
             _logger = logger;
+            _fileSystem = fileSystem;
             _traktApi = traktApi;
         }
 
@@ -74,7 +77,7 @@ namespace Trakt.Helpers
             {
                 foreach (
                     var location in
-                        user.TraktLocations.Where(location => item.Path.Contains(location + "\\")))
+                        user.TraktLocations.Where(location => _fileSystem.ContainsSubPath(location, item.Path)))
                 {
                     _logger.Info("Creating library event for " + item.Name);
                     // we have a match, this user is watching the folder the video is in. Add to queue and they
