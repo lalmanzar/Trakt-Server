@@ -68,7 +68,7 @@ namespace Trakt
             _progressEvents = new List<ProgressEvent>();
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
 
-            // This should probably be elsewhere.
+            // TODO This should probably be elsewhere.
             UpdateUserRatingFormat();
 
             EnableUserDataSavedEventListener();
