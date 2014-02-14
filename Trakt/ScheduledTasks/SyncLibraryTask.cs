@@ -13,6 +13,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api;
+using Trakt.Api.DataContracts;
 using Trakt.Helpers;
 
 namespace Trakt.ScheduledTasks
@@ -70,6 +71,13 @@ namespace Trakt.ScheduledTasks
                 var libraryRoot = user.RootFolder;
                 var traktUser = UserHelper.GetTraktUser(user);
 
+                // I'll leave this in here for now, but in reality this continue should never be reached.
+                if (traktUser == null || String.IsNullOrEmpty(traktUser.LinkedMbUserId))
+                {
+                    _logger.Error("traktUser is either null or has no linked MB account");
+                    continue;
+                }
+
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
                 var currentSeriesId = Guid.Empty;
@@ -86,7 +94,11 @@ namespace Trakt.ScheduledTasks
                     })
                     .ToList();
 
-                if (mediaItems.Count == 0) continue;
+                if (mediaItems.Count == 0)
+                {
+                    _logger.Info("No trakt media found for '" + user.Name + "'. Have trakt locations been configured?");
+                    continue;
+                }
 
                 // purely for progress reporting
                 var percentPerItem = (double) percentPerUser / (double) mediaItems.Count;
@@ -108,7 +120,9 @@ namespace Trakt.ScheduledTasks
                             {
                                 try
                                 {
-                                    await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    var dataContract = await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    if (dataContract != null)
+                                        LogTraktResponseDataContract(dataContract);
                                 }
                                 catch (ArgumentNullException argNullEx)
                                 {
@@ -130,7 +144,9 @@ namespace Trakt.ScheduledTasks
                                 // We're starting a new show. Finish up with the old one
                                 try
                                 {
-                                    await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    var dataContract = await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    if (dataContract != null)
+                                        LogTraktResponseDataContract(dataContract);
                                 }
                                 catch (ArgumentNullException argNullEx)
                                 {
@@ -159,7 +175,9 @@ namespace Trakt.ScheduledTasks
                 {
                     try
                     {
-                        await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        var dataContract = await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        if (dataContract != null)
+                            LogTraktResponseDataContract(dataContract);
                     }
                     catch (ArgumentNullException argNullEx)
                     {
@@ -176,7 +194,9 @@ namespace Trakt.ScheduledTasks
                 {
                     try
                     {
-                        await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        var dataContract = await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        if (dataContract != null)
+                            LogTraktResponseDataContract(dataContract);
                     }
                     catch (ArgumentNullException argNullEx)
                     {
@@ -210,6 +230,14 @@ namespace Trakt.ScheduledTasks
                 return
                     "Adds any media that is in each users trakt monitored locations to their trakt.tv profile";
             }
+        }
+
+        private void LogTraktResponseDataContract(TraktResponseDataContract dataContract)
+        {
+            _logger.Debug("TraktResponse status: " + dataContract.Status);
+            if (dataContract.Status.Equals("failure", StringComparison.OrdinalIgnoreCase))
+                _logger.Error("TraktResponse error: " + dataContract.Error);
+            _logger.Debug("TraktResponse message: " + dataContract.Message);
         }
     }
 }
