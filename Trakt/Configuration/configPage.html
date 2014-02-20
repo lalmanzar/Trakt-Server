@@ -79,7 +79,7 @@
                             $('#txtTraktPassword', page).val(currentUserConfig.PasswordHash);
 
                             // List the folders the user can access
-                            ApiClient.getVirtualFolders().done(function (result) {
+                            ApiClient.getVirtualFolders(userId).done(function (result) {
 
                                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
                             });

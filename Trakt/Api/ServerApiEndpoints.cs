@@ -115,21 +115,20 @@ namespace Trakt.Api
     public class TraktUriService : IRestfulService
     {
         private readonly TraktApi _traktApi;
-        private readonly IUserManager _userManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="TraktUriService"/> class.
         /// </summary>
-        /// <param name="traktApi"></param>
-        /// <param name="userManager"></param>
-        /// <param name="logger"></param>
-        public TraktUriService(TraktApi traktApi, IUserManager userManager, ILogger logger)
+        /// <param name="traktApi">The trakt API.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="libraryManager">The library manager.</param>
+        public TraktUriService(TraktApi traktApi, ILogger logger, ILibraryManager libraryManager)
         {
             _traktApi = traktApi;
-            _userManager = userManager;
             _logger = logger;
+            _libraryManager = libraryManager;
         }
 
 
@@ -143,17 +142,7 @@ namespace Trakt.Api
         {
             _logger.Info("RateItem request received");
 
-            var currentUser = _userManager.GetUserById(new Guid(request.UserId));
-
-            if (currentUser == null)
-            {
-                _logger.Info("currentUser is null");
-                return null;
-            }
-            
-
-            var currentItem =
-                    currentUser.RootFolder.RecursiveChildren.FirstOrDefault(item => item.Id.Equals(new Guid(request.Id)));
+            var currentItem = _libraryManager.GetItemById(new Guid(request.Id));
 
             if (currentItem == null)
             {

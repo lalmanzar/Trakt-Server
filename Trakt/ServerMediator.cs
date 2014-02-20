@@ -63,7 +63,7 @@ namespace Trakt
             _fileSystem = fileSystem;
 
             _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
-            _service = new TraktUriService(_traktApi, _userManager, _logger);
+            _service = new TraktUriService(_traktApi, _logger, _libraryManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _fileSystem, _traktApi);
             _progressEvents = new List<ProgressEvent>();
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
