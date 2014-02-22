@@ -61,7 +61,7 @@ namespace Trakt.ScheduledTasks
                 _logger.Info("No Users returned");
                 return;
             }
-
+            
             // purely for progress reporting
             var progPercent = 0.0;
             var percentPerUser = 100 / users.Count;
