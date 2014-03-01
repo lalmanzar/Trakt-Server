@@ -180,12 +180,18 @@ namespace Trakt
             {
                 _logger.Info("Playback Started");
 
+                if (e.Users == null || !e.Users.Any() || e.Item == null)
+                {
+                    _logger.Error("Event details incomplete. Cannot process current media");
+                    return;
+                }
+
                 // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
-                var traktUser = UserHelper.GetTraktUser(e.Users.First());
+                var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
 
                 if (traktUser == null)
                 {
-                    _logger.Info("Could not match user " + e.Users.First().Id + " with any stored credentials");
+                    _logger.Info("Could not match user with any stored credentials");
                     return;
                 }
                 // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
@@ -265,6 +271,12 @@ namespace Trakt
         {
             _logger.Debug("Playback Progress");
 
+            if (e.Users == null || !e.Users.Any() || e.Item == null)
+            {
+                _logger.Error("Event details incomplete. Cannot process current media");
+                return;
+            }
+
             var playEvent =
                 _progressEvents.FirstOrDefault(ev => ev.UserId.Equals(e.Users.First().Id) && ev.ItemId.Equals(e.Item.Id));
 
@@ -314,11 +326,21 @@ namespace Trakt
         /// <param name="e"></param>
         private async void KernelPlaybackStopped(object sender, PlaybackStopEventArgs e)
         {
+            if (e.Users == null || !e.Users.Any() || e.Item == null)
+            {
+                _logger.Error("Event details incomplete. Cannot process current media");
+                return;
+            }
+
             try
             {
-                var traktUser = UserHelper.GetTraktUser(e.Users.First());
+                var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
 
-                if (traktUser == null) return;
+                if (traktUser == null)
+                {
+                    _logger.Error("Could not match trakt user");
+                    return;
+                }
 
                 // Still need to make sure it's a trakt monitored location before sending notice to trakt.tv
                 if (traktUser.TraktLocations == null) return;
