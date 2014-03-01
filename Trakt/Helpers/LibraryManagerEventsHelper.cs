@@ -23,11 +23,12 @@ namespace Trakt.Helpers
         private readonly ILogger _logger ;
         private readonly IFileSystem _fileSystem;
         private readonly TraktApi _traktApi;
- 
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
+        /// <param name="fileSystem"></param>
         /// <param name="traktApi"></param>
         public LibraryManagerEventsHelper(ILogger logger, IFileSystem fileSystem, TraktApi traktApi)
         {

@@ -24,9 +24,7 @@ namespace Trakt
     /// </summary>
     public class ServerMediator : IServerEntryPoint
     {
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly ISessionManager _sessionManager;
-        private readonly IUserManager _userManager;
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
@@ -43,26 +41,23 @@ namespace Trakt
         /// 
         /// </summary>
         /// <param name="jsonSerializer"></param>
-        /// <param name="userManager"></param>
         /// <param name="sessionManager"> </param>
         /// <param name="userDataManager"></param>
         /// <param name="libraryManager"> </param>
         /// <param name="logger"></param>
         /// <param name="httpClient"></param>
         /// <param name="fileSystem"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, IUserManager userManager, ISessionManager sessionManager, IUserDataManager userDataManager,
+        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager,
             ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient, IFileSystem fileSystem)
         {
             Instance = this;
-            _jsonSerializer = jsonSerializer;
-            _userManager = userManager;
             _sessionManager = sessionManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = logger.GetLogger("Trakt");
             _fileSystem = fileSystem;
 
-            _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
+            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient);
             _service = new TraktUriService(_traktApi, _logger, _libraryManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _fileSystem, _traktApi);
             _progressEvents = new List<ProgressEvent>();

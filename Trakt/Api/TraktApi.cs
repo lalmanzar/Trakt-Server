@@ -23,10 +23,9 @@ namespace Trakt.Api
     /// </summary>
     public class TraktApi
     {
-        //private readonly HttpClientManager _httpClient;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
-        private IHttpClient _httpClient;
+        private readonly IHttpClient _httpClient;
 
         public TraktApi(IJsonSerializer jsonSerializer, ILogger logger, IHttpClient httpClient)
         {

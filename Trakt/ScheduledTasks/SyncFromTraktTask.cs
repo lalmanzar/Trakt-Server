@@ -25,7 +25,6 @@ namespace Trakt.ScheduledTasks
     /// </summary>
     class SyncFromTraktTask : IScheduledTask
     {
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly IUserDataManager _userDataManager;
         private readonly ILogger _logger;
@@ -34,18 +33,17 @@ namespace Trakt.ScheduledTasks
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="kernel"></param>
         /// <param name="logger"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataManager"> </param>
+        /// <param name="httpClient"></param>
         public SyncFromTraktTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient)
         {
-            _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _userDataManager = userDataManager;
             _logger = logger.GetLogger("Trakt");
-            _traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
+            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient);
         }
 
         /// <summary>
@@ -166,7 +164,7 @@ namespace Trakt.ScheduledTasks
                 .ToList();
 
             // purely for progress reporting
-            var percentPerItem = (double)percentPerUser / (double)mediaItems.Count;
+            var percentPerItem = percentPerUser / mediaItems.Count;
 
             // Turn off UserDataManager.UserDataSaved event listener until task completes
             ServerMediator.Instance.DisableUserDataSavedEventListener();

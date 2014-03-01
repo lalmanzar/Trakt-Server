@@ -25,7 +25,6 @@ namespace Trakt.ScheduledTasks
     public class SyncLibraryTask : IScheduledTask
     {
         //private readonly IHttpClient _httpClient;
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
@@ -33,11 +32,10 @@ namespace Trakt.ScheduledTasks
         
         public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IHttpClient httpClient, IFileSystem fileSystem)
         {
-            _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _logger = logger.GetLogger("Trakt");
             _fileSystem = fileSystem;
-            traktApi = new TraktApi(_jsonSerializer, _logger, httpClient);
+            traktApi = new TraktApi(jsonSerializer, _logger, httpClient);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -101,7 +99,7 @@ namespace Trakt.ScheduledTasks
                 }
 
                 // purely for progress reporting
-                var percentPerItem = (double) percentPerUser / (double) mediaItems.Count;
+                var percentPerItem = percentPerUser / (double) mediaItems.Count;
 
                 foreach (var child in mediaItems)
                 {
