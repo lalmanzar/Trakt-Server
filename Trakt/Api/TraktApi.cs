@@ -267,10 +267,24 @@ namespace Trakt.Api
 
             if (eventType == EventType.Update) return null;
 
-            var episodesPayload = episodes.Select(ep => new
-                                                            {
-                                                                season = ep.ParentIndexNumber, episode = ep.IndexNumber
-                                                            }).Cast<object>().ToList();
+            var episodesPayload = new List<Object>();
+
+            foreach (var episode in episodes)
+            {
+                // It's a multi-episode file. Add all episodes
+                if (episode.IndexNumberEnd != null && episode.IndexNumberEnd != episode.IndexNumber)
+                {
+                    for (var i = episode.IndexNumber; i <= episode.IndexNumberEnd; i++)
+                    {
+                        episodesPayload.Add(new { season = episode.ParentIndexNumber, episode = i });
+                    }
+                }
+                // it's a single-episode file
+                else
+                {
+                    episodesPayload.Add(new { season = episode.ParentIndexNumber, episode = episode.IndexNumber });
+                }
+            }
 
             var data = new
                            {
