@@ -129,15 +129,39 @@ namespace Trakt.Api
 
 
         /// <summary>
-        /// Reports to trakt.tv that an episode is being watched, or has been watched.
+        /// Reports to trakt.tv that an episode is being watched. Or that Episode(s) have been watched.
         /// </summary>
         /// <param name="episode">The episode being watched</param>
         /// <param name="status">Enum indicating whether an episode is being watched or scrobbled</param>
         /// <param name="traktUser">The user that's watching the episode</param>
-        /// <returns>A standard TraktResponse Data Contract</returns>
-        public async Task<TraktResponseDataContract> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
+        /// <returns>A List of standard TraktResponse Data Contracts</returns>
+        public async Task<List<TraktResponseDataContract>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser)
         {
-            var data = new Dictionary<string,string>
+            var responses = new List<TraktResponseDataContract>();
+
+            
+            // We're Scrobbling a multi-episode file
+            if (episode.IndexNumberEnd != null && episode.IndexNumberEnd != episode.IndexNumber && status.Equals(MediaStatus.Scrobble))
+            {
+                for (var i = episode.IndexNumber; i <= episode.IndexNumberEnd; i++)
+                {
+                    var response = await SendEpisodeStatusUpdateInternalAsync(episode, i, status, traktUser);
+                    responses.Add(response);
+                }
+            }
+            // It's a single-episode file, or we're just sending the watching status of a multi-episode file. 
+            else
+            {
+                var response = await SendEpisodeStatusUpdateInternalAsync(episode, episode.IndexNumber, status, traktUser);
+                responses.Add(response);
+            }
+
+            return responses;
+        }
+
+        private async Task<TraktResponseDataContract> SendEpisodeStatusUpdateInternalAsync(Episode episode, int? index, MediaStatus status, TraktUser traktUser)
+        {
+            var data = new Dictionary<string, string>
                            {
                                {"username", traktUser.UserName},
                                {"password", traktUser.PasswordHash}
@@ -151,15 +175,16 @@ namespace Trakt.Api
                 if (episode.Series.ProviderIds.ContainsKey("Tvdb"))
                     data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
             }
-            
+
             if (episode.Series == null || episode.AiredSeasonNumber == null)
-                 return null;
+                return null;
 
             data.Add("title", episode.Series.Name);
             data.Add("year", episode.Series.ProductionYear != null ? episode.Series.ProductionYear.ToString() : "");
             data.Add("season", episode.AiredSeasonNumber != null ? episode.AiredSeasonNumber.ToString() : "");
-            data.Add("episode", episode.IndexNumber != null ? episode.IndexNumber.ToString() : "");
+            data.Add("episode", index != null ? index.ToString() : "");
             data.Add("duration", episode.RunTimeTicks != null ? ((int)((episode.RunTimeTicks / 10000000) / 60)).ToString(CultureInfo.InvariantCulture) : "");
+
 
             Stream response = null;
 
@@ -167,7 +192,7 @@ namespace Trakt.Api
                 response = await _httpClient.Post(TraktUris.ShowWatching, data, Plugin.Instance.TraktResourcePool, CancellationToken.None).ConfigureAwait(false);
             else if (status == MediaStatus.Scrobble)
                 response = await _httpClient.Post(TraktUris.ShowScrobble, data, Plugin.Instance.TraktResourcePool, CancellationToken.None).ConfigureAwait(false);
-            
+
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
