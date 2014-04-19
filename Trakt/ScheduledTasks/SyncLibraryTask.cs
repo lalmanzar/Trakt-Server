@@ -28,14 +28,16 @@ namespace Trakt.ScheduledTasks
         private readonly IUserManager _userManager;
         private readonly ILogger _logger;
         private readonly IFileSystem _fileSystem;
-        private TraktApi traktApi;
-        
-        public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IHttpClient httpClient, IFileSystem fileSystem)
+        private readonly TraktApi _traktApi;
+        private readonly IUserDataManager _userDataManager;
+
+        public SyncLibraryTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IFileSystem fileSystem)
         {
             _userManager = userManager;
+            _userDataManager = userDataManager;
             _logger = logger.GetLogger("Trakt");
             _fileSystem = fileSystem;
-            traktApi = new TraktApi(jsonSerializer, _logger, httpClient);
+            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient);
         }
 
         public IEnumerable<ITaskTrigger> GetDefaultTriggers()
@@ -76,8 +78,22 @@ namespace Trakt.ScheduledTasks
                     continue;
                 }
 
+                IEnumerable<TraktMovieDataContract> tMovies;
+                IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched;
+
+                /*
+                 * In order to sync watched status to trakt.tv we need to know what's been watched on Trakt already. This
+                 * will stop us from endlessly incrementing the watched values on the site.
+                 */
+                tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
+                tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
+                var playedMovies = new List<Movie>();
+                var playedEpisodes = new List<Episode>();
+                var unPlayedMovies = new List<Movie>();
+                var unPlayedEpisodes = new List<Episode>();
                 var currentSeriesId = Guid.Empty;
                 
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
@@ -111,14 +127,34 @@ namespace Trakt.ScheduledTasks
                     {
                         if (child is Movie)
                         {
-                            movies.Add(child as Movie);
+                            var movie = child as Movie;
+                            movies.Add(movie);
+
+                            var userData = _userDataManager.GetUserData(user.Id, movie.GetUserDataKey());
+
+                            if (!string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Tmdb)) && userData != null)
+                            {
+                                var traktTvMovie =
+                                    tMovies.FirstOrDefault(
+                                        tMovie => tMovie.TmdbId.Equals(movie.GetProviderId(MetadataProviders.Tmdb)));
+
+                                if (traktTvMovie != null && (traktTvMovie.Watched == false || traktTvMovie.Plays < userData.PlayCount))
+                                {
+                                    playedMovies.Add(movie);
+                                }
+                                else if (traktTvMovie != null && traktTvMovie.Watched == true && !userData.Played)
+                                {
+                                    unPlayedMovies.Add(movie);
+                                }
+                            }
 
                             // publish if the list hits a certain size
-                            if (movies.Count >= 200)
+                            if (movies.Count >= 120)
                             {
+                                // Add movies to library
                                 try
                                 {
-                                    var dataContract = await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    var dataContract = await _traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                                     if (dataContract != null)
                                         LogTraktResponseDataContract(dataContract);
                                 }
@@ -131,18 +167,74 @@ namespace Trakt.ScheduledTasks
                                     _logger.ErrorException("Exception handled sending movies to trakt.tv", e);
                                 }
                                 movies.Clear();
+
+                                // Mark movies seen
+                                if (playedMovies.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var dataCotract = await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, true, cancellationToken);
+                                        if (dataCotract != null)
+                                            LogTraktResponseDataContract(dataCotract);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.ErrorException("Error updating played state", e);
+                                    }
+
+                                    playedMovies.Clear();
+                                }
+
+                                // Mark movies unseen
+                                if (unPlayedMovies.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var dataCotract = await _traktApi.SendMoviePlaystateUpdates(unPlayedMovies, traktUser, false, cancellationToken);
+                                        if (dataCotract != null)
+                                            LogTraktResponseDataContract(dataCotract);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.ErrorException("Error updating played state", e);
+                                    }
+
+                                    unPlayedMovies.Clear();
+                                }
                             }
                         }
                         else if (child is Episode)
                         {
                             var ep = child as Episode;
 
+                            var userData = _userDataManager.GetUserData(user.Id, ep.GetUserDataKey());
+
+                            var isPlayedTraktTv = false;
+
+                            if (!string.IsNullOrEmpty(ep.GetProviderId(MetadataProviders.Tvdb)))
+                            {
+                                var traktTvShow =
+                                    tShowsWatched.FirstOrDefault(
+                                        tShow => tShow.TvdbId.Equals(ep.Series.GetProviderId(MetadataProviders.Tmdb)));
+
+                                if (traktTvShow != null && traktTvShow.Seasons != null && traktTvShow.Seasons.Count > 0)
+                                {
+                                    foreach (var episode in from season in traktTvShow.Seasons where season.Season.Equals(ep.Season.IndexNumber) from episode in season.Episodes
+                                                            where episode.Equals(ep.IndexNumber) select episode)
+                                    {
+                                        isPlayedTraktTv = true;
+                                    }
+                                }
+                            }
+
                             if (currentSeriesId != ep.Series.Id && episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
+
+                                // Add episodes to trakt.tv library
                                 try
                                 {
-                                    var dataContract = await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                                    var dataContract = await _traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                                     if (dataContract != null)
                                         LogTraktResponseDataContract(dataContract);
                                 }
@@ -154,12 +246,62 @@ namespace Trakt.ScheduledTasks
                                 {
                                     _logger.ErrorException("Exception handled sending episodes to trakt.tv", e);
                                 }
+
+                                // Update played state of these episodes
+
+                                if (playedEpisodes.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var dataContracts = await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, true, cancellationToken);
+                                        if (dataContracts != null)
+                                        {
+                                            foreach (var dataContract in dataContracts)
+                                                LogTraktResponseDataContract(dataContract);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.ErrorException("Exception handled sending played episodes to trakt.tv", e);
+                                    }
+                                }
+
+                                if (unPlayedEpisodes.Count > 0)
+                                {
+                                    try
+                                    {
+                                        var dataContracts = await _traktApi.SendEpisodePlaystateUpdates(unPlayedEpisodes, traktUser, false, cancellationToken);
+                                        if (dataContracts != null)
+                                        {
+                                            foreach (var dataContract in dataContracts)
+                                                LogTraktResponseDataContract(dataContract);
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.ErrorException("Exception handled sending played episodes to trakt.tv", e);
+                                    }
+                                }
+                                
                                 
                                 episodes.Clear();
+                                playedEpisodes.Clear();
+                                unPlayedEpisodes.Clear();
                             }
 
                             currentSeriesId = ep.Series.Id;
                             episodes.Add(ep);
+
+                            // if the show has been played locally and is unplayed on trakt.tv then add it to the list
+                            if (userData != null && userData.Played && !isPlayedTraktTv)
+                            {
+                                playedEpisodes.Add(ep);
+                            }
+                            // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
+                            else if (userData != null && !userData.Played && isPlayedTraktTv)
+                            {
+                                unPlayedEpisodes.Add(ep);
+                            }
                         }
                     }
 
@@ -173,7 +315,7 @@ namespace Trakt.ScheduledTasks
                 {
                     try
                     {
-                        var dataContract = await traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        var dataContract = await _traktApi.SendLibraryUpdateAsync(movies, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                         if (dataContract != null)
                             LogTraktResponseDataContract(dataContract);
                     }
@@ -185,14 +327,14 @@ namespace Trakt.ScheduledTasks
                     {
                         _logger.ErrorException("Exception handled sending movies to trakt.tv", e);
                     }
-                    
+
                 }
 
                 if (episodes.Count > 0)
                 {
                     try
                     {
-                        var dataContract = await traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
+                        var dataContract = await _traktApi.SendLibraryUpdateAsync(episodes, traktUser, cancellationToken, EventType.Add).ConfigureAwait(false);
                         if (dataContract != null)
                             LogTraktResponseDataContract(dataContract);
                     }
@@ -203,6 +345,56 @@ namespace Trakt.ScheduledTasks
                     catch (Exception e)
                     {
                         _logger.ErrorException("Exception handled sending episodes to trakt.tv", e);
+                    }
+                }
+
+                if (playedMovies.Count > 0)
+                {
+                    try
+                    {
+                        var dataContract = await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, true, cancellationToken);
+                        if (dataContract != null)
+                            LogTraktResponseDataContract(dataContract);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.ErrorException("Error updating movie play states", e);
+                    }
+                }
+
+                if (playedEpisodes.Count > 0)
+                {
+                    try
+                    {
+                        var dataContracts = await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, true, cancellationToken);
+                        if (dataContracts != null)
+                        {
+                            foreach (var dataContract in dataContracts)
+                                LogTraktResponseDataContract(dataContract);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.ErrorException("Error updating episode play states", e);
+                    }
+                }
+
+                if (unPlayedEpisodes.Count > 0)
+                {
+                    try
+                    {
+                        var dataContracts = await _traktApi.SendEpisodePlaystateUpdates(unPlayedEpisodes, traktUser, false, cancellationToken);
+                        if (dataContracts != null)
+                        {
+                            foreach (var dataContract in dataContracts)
+                            {
+                                LogTraktResponseDataContract(dataContract);
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.ErrorException("Error updating episode play states", e);
                     }
                 }
             }

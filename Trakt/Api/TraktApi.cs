@@ -674,7 +674,7 @@ namespace Trakt.Api
         /// <param name="seen">True if episodes are being marked seen, false otherwise</param>
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns></returns>
-        public async Task<TraktResponseDataContract> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        public async Task<List<TraktResponseDataContract>> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
             if (episodes == null)
                 throw new ArgumentNullException("episodes");
@@ -688,31 +688,66 @@ namespace Trakt.Api
                 episode = ep.IndexNumber
             }).Cast<object>().ToList();
 
+            var traktResponses = new List<TraktResponseDataContract>();
+
+            var payloadParcel = new List<object>();
+
+            foreach (var episode in episodesPayload)
+            {
+                payloadParcel.Add(episode);
+
+                if (payloadParcel.Count == 100)
+                {
+                    var response = await
+                        SendEpisodePlaystateUpdatesInternalAsync(payloadParcel, episodes[0].Series, traktUser, seen,
+                            cancellationToken);
+
+                    if (response != null)
+                        traktResponses.Add(response);
+
+                    payloadParcel.Clear();
+                }
+            }
+
+            if (payloadParcel.Count > 0)
+            {
+                var response = await
+                        SendEpisodePlaystateUpdatesInternalAsync(payloadParcel, episodes[0].Series, traktUser, seen,
+                            cancellationToken);
+
+                if (response != null)
+                    traktResponses.Add(response);
+            }
+
+            return traktResponses;
+        }
+
+
+        private async Task<TraktResponseDataContract> SendEpisodePlaystateUpdatesInternalAsync(List<object> episodesPayload, Series series, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        {
             var data = new
             {
                 username = traktUser.UserName,
                 password = traktUser.PasswordHash,
-                imdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Imdb),
-                tvdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Tvdb),
-                title = episodes[0].Series.Name,
-                year = (episodes[0].Series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
+                imdb_id = series.GetProviderId(MetadataProviders.Imdb),
+                tvdb_id = series.GetProviderId(MetadataProviders.Tvdb),
+                title = series.Name,
+                year = (series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
                 episodes = episodesPayload
             };
 
             var options = new HttpRequestOptions
-                              {
-                                  RequestContent = _jsonSerializer.SerializeToString(data),
-                                  ResourcePool = Plugin.Instance.TraktResourcePool,
-                                  CancellationToken = cancellationToken,
-                                  Url = seen ? TraktUris.ShowEpisodeSeen : TraktUris.ShowEpisodeUnSeen
-                              };
+            {
+                RequestContent = _jsonSerializer.SerializeToString(data),
+                ResourcePool = Plugin.Instance.TraktResourcePool,
+                CancellationToken = cancellationToken,
+                Url = seen ? TraktUris.ShowEpisodeSeen : TraktUris.ShowEpisodeUnSeen
+            };
 
             var response = await _httpClient.Post(options).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response.Content);
         }
-
-
 
         /// <summary>
         /// 
