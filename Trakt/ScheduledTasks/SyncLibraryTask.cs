@@ -78,15 +78,12 @@ namespace Trakt.ScheduledTasks
                     continue;
                 }
 
-                IEnumerable<TraktMovieDataContract> tMovies;
-                IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched;
-
                 /*
                  * In order to sync watched status to trakt.tv we need to know what's been watched on Trakt already. This
                  * will stop us from endlessly incrementing the watched values on the site.
                  */
-                tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
-                tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+                IEnumerable<TraktMovieDataContract> tMovies = await _traktApi.SendGetAllMoviesRequest(traktUser).ConfigureAwait(false);
+                IEnumerable<TraktUserLibraryShowDataContract> tShowsWatched = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
 
                 var movies = new List<Movie>();
                 var episodes = new List<Episode>();
@@ -138,7 +135,7 @@ namespace Trakt.ScheduledTasks
                                     tMovies.FirstOrDefault(
                                         tMovie => tMovie.TmdbId.Equals(movie.GetProviderId(MetadataProviders.Tmdb)));
 
-                                if (traktTvMovie != null && (traktTvMovie.Watched == false || traktTvMovie.Plays < userData.PlayCount))
+                                if (traktTvMovie != null && userData.Played && (traktTvMovie.Watched == false || traktTvMovie.Plays < userData.PlayCount))
                                 {
                                     playedMovies.Add(movie);
                                 }
@@ -190,9 +187,9 @@ namespace Trakt.ScheduledTasks
                                 {
                                     try
                                     {
-                                        var dataCotract = await _traktApi.SendMoviePlaystateUpdates(unPlayedMovies, traktUser, false, cancellationToken);
-                                        if (dataCotract != null)
-                                            LogTraktResponseDataContract(dataCotract);
+                                        var dataContract = await _traktApi.SendMoviePlaystateUpdates(unPlayedMovies, traktUser, false, cancellationToken);
+                                        if (dataContract != null)
+                                            LogTraktResponseDataContract(dataContract);
                                     }
                                     catch (Exception e)
                                     {
