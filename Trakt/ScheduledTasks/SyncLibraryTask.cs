@@ -95,8 +95,8 @@ namespace Trakt.ScheduledTasks
                 
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
                     .Where(i => i.Name != null &&
-                        (i is Episode && !string.IsNullOrEmpty(((Episode)i).Series.GetProviderId(MetadataProviders.Tvdb))) || 
-                        (i is Movie && !string.IsNullOrEmpty(i.GetProviderId(MetadataProviders.Imdb))))
+                        (i is Episode && ((Episode)i).Series.ProviderIds.ContainsKey("Tvdb")) || 
+                        (i is Movie && i.ProviderIds.ContainsKey("Imdb")))
                     .OrderBy(i =>
                     {
                         var episode = i as Episode;
@@ -129,7 +129,7 @@ namespace Trakt.ScheduledTasks
 
                             var userData = _userDataManager.GetUserData(user.Id, movie.GetUserDataKey());
 
-                            if (!string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Tmdb)) && userData != null)
+                            if (movie.ProviderIds.ContainsKey("Tmdb") && userData != null)
                             {
                                 var traktTvMovie =
                                     tMovies.FirstOrDefault(
@@ -139,7 +139,7 @@ namespace Trakt.ScheduledTasks
                                 {
                                     playedMovies.Add(movie);
                                 }
-                                else if (traktTvMovie != null && traktTvMovie.Watched == true && !userData.Played)
+                                else if (traktTvMovie != null && traktTvMovie.Watched && !userData.Played)
                                 {
                                     unPlayedMovies.Add(movie);
                                 }
@@ -203,28 +203,27 @@ namespace Trakt.ScheduledTasks
                         else if (child is Episode)
                         {
                             var ep = child as Episode;
-
+                            
                             var userData = _userDataManager.GetUserData(user.Id, ep.GetUserDataKey());
-
+                            
                             var isPlayedTraktTv = false;
-
-                            if (!string.IsNullOrEmpty(ep.GetProviderId(MetadataProviders.Tvdb)))
+                            
+                            if (ep.Series != null && ep.Series.ProviderIds.ContainsKey("Tvdb"))
                             {
                                 var traktTvShow =
                                     tShowsWatched.FirstOrDefault(
-                                        tShow => tShow.TvdbId.Equals(ep.Series.GetProviderId(MetadataProviders.Tmdb)));
-
+                                        tShow => tShow.TvdbId.Equals(ep.Series.GetProviderId(MetadataProviders.Tvdb)));
+                                
                                 if (traktTvShow != null && traktTvShow.Seasons != null && traktTvShow.Seasons.Count > 0)
                                 {
-                                    foreach (var episode in from season in traktTvShow.Seasons where season.Season.Equals(ep.Season.IndexNumber) from episode in season.Episodes
-                                                            where episode.Equals(ep.IndexNumber) select episode)
+                                    foreach (var episode in from season in traktTvShow.Seasons where ep.Season != null && season.Season.Equals(ep.Season.IndexNumber) && season.Episodes != null && season.Episodes.Count > 0 from episode in season.Episodes where episode.Equals(ep.IndexNumber) select episode)
                                     {
                                         isPlayedTraktTv = true;
                                     }
                                 }
                             }
 
-                            if (currentSeriesId != ep.Series.Id && episodes.Count > 0)
+                            if (ep.Series != null && currentSeriesId != ep.Series.Id && episodes.Count > 0)
                             {
                                 // We're starting a new show. Finish up with the old one
 
@@ -245,7 +244,6 @@ namespace Trakt.ScheduledTasks
                                 }
 
                                 // Update played state of these episodes
-
                                 if (playedEpisodes.Count > 0)
                                 {
                                     try
@@ -279,15 +277,17 @@ namespace Trakt.ScheduledTasks
                                         _logger.ErrorException("Exception handled sending played episodes to trakt.tv", e);
                                     }
                                 }
-                                
-                                
+
                                 episodes.Clear();
                                 playedEpisodes.Clear();
                                 unPlayedEpisodes.Clear();
                             }
 
-                            currentSeriesId = ep.Series.Id;
-                            episodes.Add(ep);
+                            if (ep.Series != null)
+                            {
+                                currentSeriesId = ep.Series.Id;
+                                episodes.Add(ep);
+                            }
 
                             // if the show has been played locally and is unplayed on trakt.tv then add it to the list
                             if (userData != null && userData.Played && !isPlayedTraktTv)
