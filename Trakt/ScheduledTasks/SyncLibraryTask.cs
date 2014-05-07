@@ -95,7 +95,7 @@ namespace Trakt.ScheduledTasks
                 
                 var mediaItems = libraryRoot.GetRecursiveChildren(user)
                     .Where(i => i.Name != null &&
-                        (i is Episode && ((Episode)i).Series.ProviderIds.ContainsKey("Tvdb")) || 
+                        (i is Episode && ((Episode)i).Series != null && ((Episode)i).Series.ProviderIds.ContainsKey("Tvdb")) || 
                         (i is Movie && i.ProviderIds.ContainsKey("Imdb")))
                     .OrderBy(i =>
                     {
