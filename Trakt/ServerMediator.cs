@@ -66,25 +66,8 @@ namespace Trakt
             // TODO This should probably be elsewhere.
             UpdateUserRatingFormat();
 
-            EnableUserDataSavedEventListener();
-        }
-
-
-
-        public void EnableUserDataSavedEventListener()
-        {
-            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
         }
-
-
-
-        public void DisableUserDataSavedEventListener()
-        {
-            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
-        }
-
-
 
         /// <summary>
         /// 

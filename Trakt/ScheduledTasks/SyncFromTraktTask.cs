@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using MediaBrowser.Common.Net;
+﻿using MediaBrowser.Common.Net;
 using MediaBrowser.Common.ScheduledTasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -12,6 +7,11 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Trakt.Api;
 using Trakt.Api.DataContracts;
 using Trakt.Helpers;
@@ -91,6 +91,29 @@ namespace Trakt.ScheduledTasks
             }
         }
 
+        public static bool CanSync(BaseItem item)
+        {
+            var movie = item as Movie;
+
+            if (movie != null)
+            {
+                return !string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Imdb)) ||
+                    !string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Tmdb));
+            }
+
+            var episode = item as Episode;
+
+            if (episode != null && episode.Series != null)
+            {
+                var series = episode.Series;
+
+                return !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Imdb)) ||
+                    !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Tvdb));
+            }
+
+            return false;
+        }
+
         private async Task SyncTraktDataForUser(User user, double currentProgress, CancellationToken cancellationToken, IProgress<double> progress, double percentPerUser)
         {
             var libraryRoot = user.RootFolder;
@@ -123,38 +146,7 @@ namespace Trakt.ScheduledTasks
             _logger.Info("tShowsWatched count = " + tShowsWatched.Count());
 
             var mediaItems = libraryRoot.GetRecursiveChildren(user)
-                .Where(i =>
-                {
-                    var movie = i as Movie;
-
-                    if (movie != null)
-                    {
-                        var imdbId = movie.GetProviderId(MetadataProviders.Imdb);
-
-                        if (string.IsNullOrEmpty(imdbId))
-                        {
-                            return false;
-                        }
-
-                        return true;
-                    }
-
-                    var episode = i as Episode;
-
-                    if (episode != null && episode.Series != null)
-                    {
-                        var tvdbId = episode.Series.GetProviderId(MetadataProviders.Tvdb);
-
-                        if (string.IsNullOrEmpty(tvdbId))
-                        {
-                            return false;
-                        }
-
-                        return true;
-                    }
-
-                    return false;
-                })
+                .Where(CanSync)
                 .OrderBy(i =>
                 {
                     var episode = i as Episode;
@@ -166,18 +158,9 @@ namespace Trakt.ScheduledTasks
             // purely for progress reporting
             var percentPerItem = percentPerUser / mediaItems.Count;
 
-            // Turn off UserDataManager.UserDataSaved event listener until task completes
-            ServerMediator.Instance.DisableUserDataSavedEventListener();
-
             foreach (var movie in mediaItems.OfType<Movie>())
             {
-                /* 
-                 * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
-                 * to see if it's in the watched movies list. If it is, mark it watched, otherwise mark it unwatched.
-                 */
-                var imdbId = movie.GetProviderId(MetadataProviders.Imdb);
-
-                var matchedMovie = tMovies.FirstOrDefault(i => i.ImdbId == imdbId);
+                var matchedMovie = FindMatch(movie, tMovies);
 
                 if (matchedMovie != null)
                 {
@@ -206,7 +189,7 @@ namespace Trakt.ScheduledTasks
                         userData.LastPlayedDate = null;
                     }
 
-                    await _userDataManager.SaveUserData(user.Id, movie, userData, UserDataSaveReason.TogglePlayed,  cancellationToken);
+                    await _userDataManager.SaveUserData(user.Id, movie, userData, UserDataSaveReason.Import,  cancellationToken);
                 }
 
                 // purely for progress reporting
@@ -216,53 +199,46 @@ namespace Trakt.ScheduledTasks
 
             foreach (var episode in mediaItems.OfType<Episode>())
             {
-                /* 
-               * First make sure this child is in the users collection. If not, skip it. if it is in the collection then we need
-               * to see if it's in the watched shows list. If it is, mark it watched, otherwise mark it unwatched.
-               */
-                var tvdbId = episode.Series.GetProviderId(MetadataProviders.Tvdb);
-
-                var matchedShow = tShowsCollection.FirstOrDefault(tShow => tShow.TvdbId == tvdbId);
+                var matchedShow = FindMatch(episode.Series, tShowsCollection);
 
                 if (matchedShow != null)
                 {
-                    var matchedSeason = matchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
+                    var matchedSeason = matchedShow.Seasons
+                        .FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
 
-                    if (matchedSeason != null)
+                    // if it's not a match then it means trakt doesn't know about the episode, leave the watched state alone and move on
+                    if (matchedSeason != null && matchedSeason.Episodes.Contains(episode.IndexNumber ?? -1))
                     {
-                        // if it's not a match then it means trakt doesn't know about the episode, leave the watched state alone and move on
-                        if (matchedSeason.Episodes.Contains(episode.IndexNumber ?? -1))
+                        // episode is in users libary. Now we need to determine if it's watched
+                        var userData = _userDataManager.GetUserData(user.Id, episode.GetUserDataKey());
+
+                        var watchedShowMatch = FindMatch(episode.Series, tShowsWatched);
+
+                        var isWatched = false;
+
+                        if (watchedShowMatch != null)
                         {
-                            // episode is in users libary. Now we need to determine if it's watched
-                            var userData = _userDataManager.GetUserData(user.Id, episode.GetUserDataKey());
+                            var watchedSeasonMatch = watchedShowMatch.Seasons
+                                .FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
 
-                            var watchedShowMatch = tShowsWatched.SingleOrDefault(tShow => tShow.TvdbId == tvdbId);
-
-                            var isWatched = false;
-
-                            if (watchedShowMatch != null)
+                            if (watchedSeasonMatch != null)
                             {
-                                var watchedSeasonMatch = watchedShowMatch.Seasons.FirstOrDefault(tSeason => tSeason.Season == (episode.ParentIndexNumber ?? -1));
-
-                                if (watchedSeasonMatch != null)
+                                if (watchedSeasonMatch.Episodes.Contains(episode.IndexNumber ?? -1))
                                 {
-                                    if (watchedSeasonMatch.Episodes.Contains(episode.IndexNumber ?? -1))
-                                    {
-                                        userData.Played = true;
-                                        isWatched = true;
-                                    }
+                                    userData.Played = true;
+                                    isWatched = true;
                                 }
                             }
-
-                            if (!isWatched)
-                            {
-                                userData.Played = false;
-                                userData.PlayCount = 0;
-                                userData.LastPlayedDate = null;
-                            }
-
-                            await _userDataManager.SaveUserData(user.Id, episode, userData, UserDataSaveReason.TogglePlayed, cancellationToken);
                         }
+
+                        if (!isWatched)
+                        {
+                            userData.Played = false;
+                            userData.PlayCount = 0;
+                            userData.LastPlayedDate = null;
+                        }
+
+                        await _userDataManager.SaveUserData(user.Id, episode, userData, UserDataSaveReason.Import, cancellationToken);
                     }
                 }
 
@@ -271,9 +247,52 @@ namespace Trakt.ScheduledTasks
                 progress.Report(currentProgress);
 
             }
+        }
 
-            // Turn on UserDataManager.UserDataSaved event listener since task has completed
-            ServerMediator.Instance.EnableUserDataSavedEventListener();
+        public static TraktUserLibraryShowDataContract FindMatch(Series item, IEnumerable<TraktUserLibraryShowDataContract> results)
+        {
+            return results.FirstOrDefault(i =>
+            {
+                var imdb = item.GetProviderId(MetadataProviders.Imdb);
+
+                if (!string.IsNullOrWhiteSpace(imdb) &&
+                    string.Equals(imdb, i.ImdbId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                var tvdb = item.GetProviderId(MetadataProviders.Tvdb);
+                if (!string.IsNullOrWhiteSpace(tvdb) &&
+                    string.Equals(imdb, i.TvdbId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
+        public static TraktMovieDataContract FindMatch(BaseItem item, IEnumerable<TraktMovieDataContract> results)
+        {
+            return results.FirstOrDefault(i =>
+            {
+                var imdb = item.GetProviderId(MetadataProviders.Imdb);
+
+                if (!string.IsNullOrWhiteSpace(imdb) && 
+                    string.Equals(imdb, i.ImdbId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                var tmdb = item.GetProviderId(MetadataProviders.Tmdb);
+                if (!string.IsNullOrWhiteSpace(tmdb) &&
+                    string.Equals(imdb, i.TmdbId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                return false;
+            });
         }
 
         /// <summary>
