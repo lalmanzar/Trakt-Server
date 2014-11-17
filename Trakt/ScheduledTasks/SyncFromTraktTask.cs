@@ -103,10 +103,10 @@ namespace Trakt.ScheduledTasks
 
             var episode = item as Episode;
 
-            if (episode != null && episode.Series != null)
+            if (episode != null && episode.Series != null && !episode.IsVirtualUnaired && !episode.IsMissingEpisode)
             {
                 var series = episode.Series;
-
+                
                 return !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Imdb)) ||
                     !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Tvdb));
             }
@@ -118,6 +118,7 @@ namespace Trakt.ScheduledTasks
         {
             var libraryRoot = user.RootFolder;
             var traktUser = UserHelper.GetTraktUser(user);
+            var syncItemFailures = 0;
             
             IEnumerable<TraktMovieDataContract> tMovies;
             IEnumerable<TraktUserLibraryShowDataContract> tShowsCollection;
@@ -141,9 +142,9 @@ namespace Trakt.ScheduledTasks
             }
             
 
-            _logger.Info("tMovies count = " + tMovies.Count());
-            _logger.Info("tShowsCollection count = " + tShowsCollection.Count());
-            _logger.Info("tShowsWatched count = " + tShowsWatched.Count());
+            _logger.Info("Trakt.tv Movies count = " + tMovies.Count());
+            _logger.Info("Trakt.tv ShowsCollection count = " + tShowsCollection.Count());
+            _logger.Info("Trakt.tv ShowsWatched count = " + tShowsWatched.Count());
 
             var mediaItems = libraryRoot.GetRecursiveChildren(user)
                 .Where(CanSync)
@@ -189,7 +190,12 @@ namespace Trakt.ScheduledTasks
                         userData.LastPlayedDate = null;
                     }
 
-                    await _userDataManager.SaveUserData(user.Id, movie, userData, UserDataSaveReason.Import,  cancellationToken);
+                    await _userDataManager.SaveUserData(user.Id, movie, userData, UserDataSaveReason.Import, cancellationToken);
+                }
+                else
+                {
+                    syncItemFailures++;
+                    _logger.Info("Failed to match ", movie.Name);
                 }
 
                 // purely for progress reporting
@@ -225,14 +231,31 @@ namespace Trakt.ScheduledTasks
                             {
                                 if (watchedSeasonMatch.Episodes.Contains(episode.IndexNumber ?? -1))
                                 {
+                                    //_logger.Debug("Marking as watched " + GetVerboseEpisodeData(episode));
                                     userData.Played = true;
                                     isWatched = true;
                                 }
+                                else
+                                {
+                                    syncItemFailures++;
+                                    _logger.Info("No Episode match in Watched shows list " + GetVerboseEpisodeData(episode));
+                                }
                             }
+                            else
+                            {
+                                syncItemFailures++;
+                                _logger.Info("No Season match in Watched shows list " + GetVerboseEpisodeData(episode));
+                            }
+                        }
+                        else
+                        {
+                            syncItemFailures++;
+                            _logger.Info("No Show match in Watched shows list " + GetVerboseEpisodeData(episode));
                         }
 
                         if (!isWatched)
                         {
+                            //_logger.Debug("Marking as unwatched " + GetVerboseEpisodeData(episode));
                             userData.Played = false;
                             userData.PlayCount = 0;
                             userData.LastPlayedDate = null;
@@ -240,13 +263,39 @@ namespace Trakt.ScheduledTasks
 
                         await _userDataManager.SaveUserData(user.Id, episode, userData, UserDataSaveReason.Import, cancellationToken);
                     }
+                    else
+                    {
+                        syncItemFailures++;
+                        _logger.Info("Failed to match episode/season numbers ", GetVerboseEpisodeData(episode));
+                    }
+                }
+                else
+                {
+                    syncItemFailures++;
+                    _logger.Info("Failed to match show " + GetVerboseEpisodeData(episode));
                 }
 
                 // purely for progress reporting
                 currentProgress += percentPerItem;
-                progress.Report(currentProgress);
-
+                progress.Report(currentProgress);                
             }
+            //_logger.Info(syncItemFailures + " items not parsed");
+        }
+
+        private string GetVerboseEpisodeData(Episode episode)
+        {
+            string episodeString = "";
+            episodeString += "Episode: " + (episode.ParentIndexNumber != null ? episode.ParentIndexNumber.ToString() : "null");
+            episodeString += "x" + (episode.IndexNumber != null ? episode.IndexNumber.ToString() : "null");
+            episodeString += " '" + episode.Name + "' ";
+            episodeString += "Series: '" + (episode.Series != null
+                ? !String.IsNullOrWhiteSpace(episode.Series.Name)
+                    ? episode.Series.Name
+                    : "null property"
+                : "null class");
+            episodeString += "'";
+
+            return episodeString;
         }
 
         public static TraktUserLibraryShowDataContract FindMatch(Series item, IEnumerable<TraktUserLibraryShowDataContract> results)
