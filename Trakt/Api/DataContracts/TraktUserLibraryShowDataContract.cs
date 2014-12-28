@@ -20,9 +20,6 @@ namespace Trakt.Api.DataContracts
         [DataMember(Name = "year")]
         public int Year { get; set; }
 
-        [DataMember(Name = "url")]
-        public string Url { get; set; }
-
         [DataMember(Name = "imdb_id")]
         public string ImdbId { get; set; }
 
@@ -32,12 +29,6 @@ namespace Trakt.Api.DataContracts
         [DataMember(Name = "tvrage_id")]
         public string TvRageId { get; set; }
 
-        [DataMember(Name = "images")]
-        public TraktImagesDataContract Images { get; set; }
-        
-        [DataMember(Name = "genres")]
-        public List<string> Genres { get; set; }
-        
         [DataMember(Name = "seasons")]
         public List<TraktSeasonDataContract> Seasons { get; set; }
 

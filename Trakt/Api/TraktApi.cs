@@ -41,7 +41,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public async Task<TraktResponseDataContract> AccountTest(TraktUser traktUser)
         {
-            var data = new Dictionary<string, string> {{"username", traktUser.UserName}, {"password", traktUser.PasswordHash}};
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
 
             var response =
                 await
@@ -85,7 +85,7 @@ namespace Trakt.Api
                                                                      CancellationToken.None).ConfigureAwait(false);
 
             return _jsonSerializer.DeserializeFromStream<TraktFriendDataContract>(response);
-            
+
         }
 
 
@@ -99,7 +99,7 @@ namespace Trakt.Api
         /// <returns>A standard TraktResponse Data Contract</returns>
         public async Task<TraktResponseDataContract> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser)
         {
-            var data = new Dictionary<string,string>
+            var data = new Dictionary<string, string>
                            {
                                {"username", traktUser.UserName},
                                {"password", traktUser.PasswordHash},
@@ -139,7 +139,7 @@ namespace Trakt.Api
         {
             var responses = new List<TraktResponseDataContract>();
 
-            
+
             // We're Scrobbling a multi-episode file
             if (episode.IndexNumberEnd != null && episode.IndexNumberEnd != episode.IndexNumber && status.Equals(MediaStatus.Scrobble))
             {
@@ -215,23 +215,25 @@ namespace Trakt.Api
             if (eventType == EventType.Update) return null;
 
             var moviesPayload = movies.Select(m => new
-                                                       {
-                                                           title = m.Name, imdb_id = m.GetProviderId(MetadataProviders.Imdb), year = m.ProductionYear ?? 0
-                                                       }).Cast<object>().ToList();
+            {
+                title = m.Name,
+                imdb_id = m.GetProviderId(MetadataProviders.Imdb),
+                year = m.ProductionYear ?? 0
+            }).Cast<object>().ToList();
 
             var data = new
-                           {
-                               username = traktUser.UserName,
-                               password = traktUser.PasswordHash,
-                               movies = moviesPayload
-                           };
-            
+            {
+                username = traktUser.UserName,
+                password = traktUser.PasswordHash,
+                movies = moviesPayload
+            };
+
             var options = new HttpRequestOptions
-                              {
-                                  RequestContent = _jsonSerializer.SerializeToString(data),
-                                  ResourcePool = Plugin.Instance.TraktResourcePool,
-                                  CancellationToken = cancellationToken
-                              };
+            {
+                RequestContent = _jsonSerializer.SerializeToString(data),
+                ResourcePool = Plugin.Instance.TraktResourcePool,
+                CancellationToken = cancellationToken
+            };
 
             switch (eventType)
             {
@@ -244,7 +246,7 @@ namespace Trakt.Api
             }
 
             var response = await _httpClient.Post(options).ConfigureAwait(false);
-            
+
             return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response.Content);
         }
 
@@ -287,15 +289,15 @@ namespace Trakt.Api
             }
 
             var data = new
-                           {
-                               username = traktUser.UserName,
-                               password = traktUser.PasswordHash,
-                               imdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Imdb),
-                               tvdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Tvdb),
-                               title = episodes[0].Series.Name,
-                               year = (episodes[0].Series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
-                               episodes = episodesPayload
-                           };
+            {
+                username = traktUser.UserName,
+                password = traktUser.PasswordHash,
+                imdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Imdb),
+                tvdb_id = episodes[0].Series.GetProviderId(MetadataProviders.Tvdb),
+                title = episodes[0].Series.Name,
+                year = (episodes[0].Series.ProductionYear ?? 0).ToString(CultureInfo.InvariantCulture),
+                episodes = episodesPayload
+            };
 
             var options = new HttpRequestOptions
             {
@@ -303,8 +305,8 @@ namespace Trakt.Api
                 ResourcePool = Plugin.Instance.TraktResourcePool,
                 CancellationToken = cancellationToken
             };
-            
-            
+
+
 
             switch (eventType)
             {
@@ -350,16 +352,16 @@ namespace Trakt.Api
             };
 
             var options = new HttpRequestOptions
-                                                {
-                                                    RequestContent = _jsonSerializer.SerializeToString(data),
-                                                    ResourcePool = Plugin.Instance.TraktResourcePool,
-                                                    CancellationToken = cancellationToken
-                                                };
+            {
+                RequestContent = _jsonSerializer.SerializeToString(data),
+                ResourcePool = Plugin.Instance.TraktResourcePool,
+                CancellationToken = cancellationToken
+            };
 
             switch (eventType)
             {
                 case EventType.Add:
-                    
+
                     break;
                 case EventType.Remove:
                     options.Url = TraktUris.ShowUnLibrary;
@@ -393,7 +395,7 @@ namespace Trakt.Api
             {
                 if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
-                
+
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.RateMovie;
@@ -405,7 +407,7 @@ namespace Trakt.Api
                 {
                     data.Add("title", episode.Series.Name);
                     data.Add("year", episode.Series.ProductionYear != null ? episode.Series.ProductionYear.ToString() : "");
-                    
+
                     if (episode.Series.ProviderIds != null)
                     {
                         if (episode.Series.ProviderIds.ContainsKey("Imdb"))
@@ -423,7 +425,7 @@ namespace Trakt.Api
                 {
                     data.Add("title", item.Name);
                     data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-                    
+
                     if (item.ProviderIds != null)
                     {
                         if (item.ProviderIds.ContainsKey("Imdb"))
@@ -438,7 +440,7 @@ namespace Trakt.Api
             }
 
             data.Add("rating", rating.ToString(CultureInfo.InvariantCulture));
-            
+
             var response =
                 await
                 _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
@@ -471,7 +473,7 @@ namespace Trakt.Api
             {
                 if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
                     data.Add("imdb_id", item.ProviderIds["Imdb"]);
-                
+
                 data.Add("title", item.Name);
                 data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
                 url = TraktUris.CommentMovie;
@@ -492,7 +494,7 @@ namespace Trakt.Api
 
                     data.Add("season", episode.AiredSeasonNumber.ToString());
                     data.Add("episode", episode.IndexNumber.ToString());
-                    url = TraktUris.CommentEpisode;   
+                    url = TraktUris.CommentEpisode;
                 }
                 else // It's a Series
                 {
@@ -507,7 +509,7 @@ namespace Trakt.Api
                         if (item.ProviderIds.ContainsKey("Tvdb"))
                             data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
                     }
-                    
+
                     url = TraktUris.CommentShow;
                 }
             }
@@ -533,8 +535,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public async Task<List<TraktMovieDataContract>> SendMovieRecommendationsRequest(TraktUser traktUser)
         {
-            var data = new Dictionary<string, string>
-                           {{"username", traktUser.UserName}, {"password", traktUser.PasswordHash}};
+            var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
 
             Stream response =
                 await
@@ -570,7 +571,7 @@ namespace Trakt.Api
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
-        public async Task<List<TraktMovieDataContract>>  SendGetAllMoviesRequest(TraktUser traktUser)
+        public async Task<List<TraktMovieDataContract>> SendGetAllMoviesRequest(TraktUser traktUser)
         {
             var data = new Dictionary<string, string> { { "username", traktUser.UserName }, { "password", traktUser.PasswordHash } };
 
@@ -652,12 +653,12 @@ namespace Trakt.Api
             };
 
             var options = new HttpRequestOptions
-                                                {
-                                                    RequestContent = _jsonSerializer.SerializeToString(data),
-                                                    ResourcePool = Plugin.Instance.TraktResourcePool,
-                                                    CancellationToken = cancellationToken,
-                                                    Url = seen ? TraktUris.MovieSeen : TraktUris.MovieUnSeen
-                                                };
+            {
+                RequestContent = _jsonSerializer.SerializeToString(data),
+                ResourcePool = Plugin.Instance.TraktResourcePool,
+                CancellationToken = cancellationToken,
+                Url = seen ? TraktUris.MovieSeen : TraktUris.MovieUnSeen
+            };
 
             var response = await _httpClient.Post(options).ConfigureAwait(false);
 
@@ -812,7 +813,7 @@ namespace Trakt.Api
 
             if (allMovies != null && allMovies.Any())
             {
-                
+
             }
 
             if (allShows != null && allShows.Any())
@@ -838,7 +839,7 @@ namespace Trakt.Api
 
                     await _httpClient.Post(options).ConfigureAwait(false);
                 }
-                
+
             }
 
             // How to manually run the 'SyncLibraryTask' so that we add back a 'clean' library?

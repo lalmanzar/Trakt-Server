@@ -220,7 +220,11 @@ namespace Trakt.ScheduledTasks
 
                     if (traktTvShow != null && traktTvShow.Seasons != null && traktTvShow.Seasons.Count > 0)
                     {
-                        foreach (var episode in from season in traktTvShow.Seasons where ep.Season != null && season.Season.Equals(ep.Season.IndexNumber) && season.Episodes != null && season.Episodes.Count > 0 from episode in season.Episodes where episode.Equals(ep.IndexNumber) select episode)
+                        if (
+                            traktTvShow.Seasons.Where(season =>
+                                    ep.Season != null && season.Season.Equals(ep.Season.IndexNumber) &&
+                                    season.Episodes != null && season.Episodes.Count > 0)
+                                .SelectMany(x => x.Episodes).Any(episode => episode.Equals(ep.IndexNumber)))
                         {
                             isPlayedTraktTv = true;
                         }

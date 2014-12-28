@@ -74,16 +74,16 @@
         public const string ShowSummary = @"http://api.trakt.tv/show/summary.json/" + Devkey + @"/{0}";
 
         // User
-        public const string MoviesAll = @"http://api.trakt.tv/user/library/movies/all.json/" + Devkey + @"/{0}";
-        public const string ShowsCollection = @"http://api.trakt.tv/user/library/shows/collection.json/" + Devkey + @"/{0}";
-        public const string ShowsWatched = @"http://api.trakt.tv/user/library/shows/watched.json/" + Devkey + @"/{0}";
-        public const string WatchedEpisodes = @"http://api.trakt.tv/user/watched/episodes.json/" + Devkey + @"/{0}";
-        public const string WatchedMovies = @"http://api.trakt.tv/user/watched/movies.json/" + Devkey + @"/{0}";
+        public const string MoviesAll = @"http://api.trakt.tv/user/library/movies/all.json/" + Devkey + @"/{0}/min";
+        public const string ShowsCollection = @"http://api.trakt.tv/user/library/shows/collection.json/" + Devkey + @"/{0}/min";
+        public const string ShowsWatched = @"http://api.trakt.tv/user/library/shows/watched.json/" + Devkey + @"/{0}/min";
+        public const string WatchedEpisodes = @"http://api.trakt.tv/user/watched/episodes.json/" + Devkey + @"/{0}/min";
+        public const string WatchedMovies = @"http://api.trakt.tv/user/watched/movies.json/" + Devkey + @"/{0}/min";
         public const string UserLists = @"http://api.trakt.tv/user/lists.json/" + Devkey + @"/{0}";
         public const string List = @"http://api.trakt.tv/user/list.json/" + Devkey + @"/{0}/{1}";
-        public const string WatchlistMovies = @"http://api.trakt.tv/user/watchlist/movies.json/" + Devkey + @"/{0}";
-        public const string WatchlistShows = @"http://api.trakt.tv/user/watchlist/shows.json/" + Devkey + @"/{0}";
-        public const string WatchlistEpisodes = @"http://api.trakt.tv/user/watchlist/episodes.json/" + Devkey + @"/{0}";
+        public const string WatchlistMovies = @"http://api.trakt.tv/user/watchlist/movies.json/" + Devkey + @"/{0}/min";
+        public const string WatchlistShows = @"http://api.trakt.tv/user/watchlist/shows.json/" + Devkey + @"/{0}/min";
+        public const string WatchlistEpisodes = @"http://api.trakt.tv/user/watchlist/episodes.json/" + Devkey + @"/{0}/min";
         public const string UserProfile = @"http://api.trakt.tv/user/profile.json/" + Devkey + @"/{0}";
         public const string Friends = @"http://api.trakt.tv/user/network/friends.json/" + Devkey + @"/{0}";
 
